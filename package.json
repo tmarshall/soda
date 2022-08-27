@@ -9,7 +9,9 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/commander": "^2.12.2",
     "@types/node": "^18.7.13",
+    "commander": "^9.4.0",
     "typescript": "^4.8.2"
   }
 }
