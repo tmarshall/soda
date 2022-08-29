@@ -1,19 +1,19 @@
 import { createServer } from 'node:http'
 import { program } from 'commander'
 
-import walk from './walk'
+import walkRoutes from './walkRoutes'
 
 if (require.main === module) {
   program
     .command('walk [directory]')
     .description('walk a directory of routes')
-    .action(walk)
+    .action(walkRoutes)
 
   program.parse()
 }
 
 module.exports = {
-  walk,
+  walkRoutes,
 }
 
 // const server = createServer()
