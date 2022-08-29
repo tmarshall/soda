@@ -1,14 +1,20 @@
 import { createServer } from 'node:http'
 import { program } from 'commander'
 
-program
-  .command('walk [directory]')
-  .description('walk a directory of routes')
-  .action((directory = './routes') => {
-    console.log('WALKING', directory)
-  })
+import walk from './walk'
 
-program.parse()
+if (require.main === module) {
+  program
+    .command('walk [directory]')
+    .description('walk a directory of routes')
+    .action(walk)
+
+  program.parse()
+}
+
+module.exports = {
+  walk,
+}
 
 // const server = createServer()
 
