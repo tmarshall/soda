@@ -7,7 +7,9 @@ if (require.main === module) {
   program
     .command('walk [directory]')
     .description('walk a directory of routes')
-    .action(walkRoutes)
+    .action(async (...args) => {
+      await walkRoutes(...args)
+    })
 
   program.parse()
 }
