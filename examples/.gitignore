@@ -1,3 +1,5 @@
 # examples don't need as much detail
-
 package-lock.json
+
+# but they do need the routes, which are suppressed at the top level
+!routes
