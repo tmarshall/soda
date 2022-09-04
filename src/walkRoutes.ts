@@ -1,6 +1,6 @@
 import { Dirent } from 'node:fs'
 import { readdir } from 'node:fs/promises'
-import { relative } from 'node:path'
+import { join } from 'node:path'
 
 enum RouteVerb {
   All = 'all',
@@ -21,10 +21,10 @@ export interface RouteDefinition {
 
 export default async function walkRoutes(dirpath = './routes') {
   const baseDir = await readdir(dirpath, { withFileTypes: true })
-  return await walkDirectory(baseDir, baseDir, dirpath)
+  return await walkDirectory(baseDir, dirpath)
 }
 
-async function walkDirectory(baseDir: Dirent[], currentDir: Dirent[], currentDirPath: string): Promise<RouteDefinition[]> {
+async function walkDirectory(currentDir: Dirent[], currentDirPath: string): Promise<RouteDefinition[]> {
   const subdirsPending: [string, Promise<Dirent[]>][] = []
   const handlers: RouteDefinition[] = []
 
@@ -33,7 +33,7 @@ async function walkDirectory(baseDir: Dirent[], currentDir: Dirent[], currentDir
     
     if (dirent.isDirectory()) {
       if (dirent.name.slice(0, 1) !== '.') {
-        const subdirPath = relative(currentDirPath, dirent.name)
+        const subdirPath = join(currentDirPath, dirent.name)
         subdirsPending.push([subdirPath, readdir(subdirPath, { withFileTypes: true })])
       }
       continue
@@ -47,14 +47,14 @@ async function walkDirectory(baseDir: Dirent[], currentDir: Dirent[], currentDir
       continue
     }
 
-    handlers.push(...getRoutesFromFile(relative(currentDirPath, dirent.name)))
+    handlers.push(...getRoutesFromFile(join(currentDirPath, dirent.name)))
   }
 
   const pendingSubWalks: Promise<RouteDefinition[]>[] = []
   for (let i = 0; i < subdirsPending.length; i++) {
     const [subdirPath, subdirRead] = subdirsPending[i]
     const subdir = await subdirRead
-    pendingSubWalks.push(walkDirectory(baseDir, subdir, subdirPath))
+    pendingSubWalks.push(walkDirectory(subdir, subdirPath))
   }
   const subwalks = await Promise.all(pendingSubWalks)
   
