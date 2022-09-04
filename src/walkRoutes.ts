@@ -31,8 +31,8 @@ export default async function walkRoutes(dirpath = './routes') {
 }
 
 async function walkDirectory(currentDir: Dirent[], currentDirPath: string, baseDirPath: string): Promise<RouteDefinition[]> {
-  const subdirsPending: [string, Promise<Dirent[]>][] = []
-  const handlers: RouteDefinition[] = []
+  const pendingSubdirs: [string, Promise<Dirent[]>][] = []
+  const pendingHandlers: Promise<RouteDefinition[]>[] = []
 
   for (let i = 0; i < currentDir.length; i++) {
     const dirent = currentDir[i]
@@ -40,7 +40,7 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string, baseD
     if (dirent.isDirectory()) {
       if (dirent.name.slice(0, 1) !== '.') {
         const subdirPath = path.join(currentDirPath, './' + dirent.name)
-        subdirsPending.push([subdirPath, readdir(subdirPath, { withFileTypes: true })])
+        pendingSubdirs.push([subdirPath, readdir(subdirPath, { withFileTypes: true })])
       }
       continue
     }
@@ -53,21 +53,25 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string, baseD
       continue
     }
 
-    handlers.push(...(await getRoutesFromFile(dirent.name, path.join(currentDirPath, './' + dirent.name), baseDirPath)))
+    pendingHandlers.push(getRoutesFromFile(dirent.name, path.join(currentDirPath, './' + dirent.name), baseDirPath))
   }
 
   const pendingSubWalks: Promise<RouteDefinition[]>[] = []
-  for (let i = 0; i < subdirsPending.length; i++) {
-    const [subdirPath, subdirRead] = subdirsPending[i]
+  for (let i = 0; i < pendingSubdirs.length; i++) {
+    const [subdirPath, subdirRead] = pendingSubdirs[i]
     const subdir = await subdirRead
     pendingSubWalks.push(walkDirectory(subdir, subdirPath, baseDirPath))
   }
-  const subwalks = await Promise.all(pendingSubWalks)
+
+  const [subwalks, handlers] = await Promise.all([
+    Promise.all(pendingSubWalks),
+    Promise.all(pendingHandlers),
+  ])
   
-  return subwalks.reduce((flattened: RouteDefinition[], subdirHandlers: RouteDefinition[]) => {
+  return [...handlers, ...subwalks].reduce((flattened: RouteDefinition[], subdirHandlers: RouteDefinition[]) => {
     flattened.push(...subdirHandlers)
     return flattened
-  }, handlers)
+  }, [])
 }
 
 async function getRoutesFromFile(fileName: string, filePath: string, baseDirPath: string) {
