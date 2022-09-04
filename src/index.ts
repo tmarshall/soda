@@ -8,7 +8,8 @@ if (require.main === module) {
     .command('walk [directory]')
     .description('walk a directory of routes')
     .action(async (...args) => {
-      await walkRoutes(...args)
+      const results = await walkRoutes(...args)
+      console.log(results)
     })
 
   program.parse()

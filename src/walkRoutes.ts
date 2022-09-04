@@ -3,20 +3,24 @@ import { readdir } from 'node:fs/promises'
 import { resolve as resolvePath } from 'node:path'
 
 enum RouteVerb {
-  All = 'all',
-  Head = 'head',
-  Get = 'get',
-  Post = 'post',
-  Put = 'put',
-  Patch = 'patch',
-  Delete = 'delete',
-  Options = 'options',
-  Trace = 'trace',
-  Connect = 'connect',
+  all = 'all',
+  head = 'head',
+  get = 'get',
+  post = 'post',
+  put = 'put',
+  patch = 'patch',
+  delete = 'del',
+  options = 'options',
+  trace = 'trace',
+  connect = 'connect',
 }
 
+type RouteVerbKey = keyof typeof RouteVerb
+
+const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
+
 export interface RouteDefinition {
-  verb: RouteVerb
+  verb: RouteVerbKey
 }
 
 export default async function walkRoutes(dirpath = './routes') {
@@ -68,7 +72,16 @@ async function getRoutesFromFile(filePath: string) {
   const handlers: RouteDefinition[] = []
 
   const fileModule = await import(filePath)
-  console.log('MODULE', fileModule)
+  
+  let verbKey: RouteVerbKey
+  for (let verbKey of routeVerbExports) {
+    const verbKeyValue = RouteVerb[verbKey]
+    if (verbKeyValue in fileModule) {
+      handlers.push({
+        verb: verbKey
+      })
+    }
+  }
 
   return handlers
 }
