@@ -22,6 +22,7 @@ const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
 export interface RouteDefinition {
   verb: RouteVerbKey,
   path: string,
+  func: Function,
 }
 
 export default async function walkRoutes(dirpath = './routes') {
@@ -87,6 +88,7 @@ async function getRoutesFromFile(fileName: string, filePath: string, baseDirPath
       handlers.push({
         verb: verbKey,
         path: routePath,
+        func: fileModule[verbKeyValue],
       })
     }
   }
