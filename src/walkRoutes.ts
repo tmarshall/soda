@@ -43,9 +43,9 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string): Prom
       continue
     }
     const filename = dirent.name.slice(-3).toLowerCase()
-    // if (filename.slice(-3) !== '.js' && filename.slice(-3) !== '.ts') {
-    //   continue
-    // }
+    if (filename.slice(-3) !== '.js') {
+      continue
+    }
 
     handlers.push(...(await getRoutesFromFile(resolvePath(currentDirPath, dirent.name))))
   }
