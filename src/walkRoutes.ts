@@ -26,6 +26,7 @@ export interface RouteDefinition {
 }
 
 export default async function walkRoutes(dirpath = './routes') {
+  // reading in the base dir, and kicking of a recursive walk
   const baseDir = await readdir(dirpath, { withFileTypes: true })
   return await walkDirectory(baseDir, dirpath, dirpath)
 }
@@ -34,6 +35,10 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string, baseD
   const pendingSubdirs: [string, Promise<Dirent[]>][] = []
   const pendingHandlers: Promise<RouteDefinition[]>[] = []
 
+  // walking the directory
+  //   sub-directories will be read in, and stashed for a recursive walk
+  //   javascript files will be processed immediately
+  //   dot files are skipped
   for (let i = 0; i < currentDir.length; i++) {
     const dirent = currentDir[i]
     
@@ -49,13 +54,14 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string, baseD
       continue
     }
     const filename = dirent.name.slice(-3).toLowerCase()
-    if (filename.slice(-3) !== '.js') {
+    if (filename.slice(-3) !== '.js' || filename.slice(0, 1) === '.') {
       continue
     }
 
     pendingHandlers.push(getRoutesFromFile(dirent.name, path.join(currentDirPath, './' + dirent.name), baseDirPath))
   }
 
+  // walking sub-directories
   const pendingSubWalks: Promise<RouteDefinition[]>[] = []
   for (let i = 0; i < pendingSubdirs.length; i++) {
     const [subdirPath, subdirRead] = pendingSubdirs[i]
@@ -63,11 +69,13 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string, baseD
     pendingSubWalks.push(walkDirectory(subdir, subdirPath, baseDirPath))
   }
 
+  // waiting for all sub-directories and files to finish processing
   const [subwalks, handlers] = await Promise.all([
     Promise.all(pendingSubWalks),
     Promise.all(pendingHandlers),
   ])
   
+  // return a flat list of RouteDefinition instances
   return [...handlers, ...subwalks].reduce((flattened: RouteDefinition[], subdirHandlers: RouteDefinition[]) => {
     flattened.push(...subdirHandlers)
     return flattened
