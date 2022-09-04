@@ -95,20 +95,3 @@ async function getRoutesFromFile(fileName: string, filePath: string, baseDirPath
 
   return handlers
 }
-
-// // can return undefined
-// function direntType(dirent: Dirent) {
-//   if (dirent.isFile()) {
-//     if (dirent.name.slice(-3).toLowerCase() === '.js') {
-//       const verbMatch = dirent.name.match(preDotExpr)
-//       if (verbMatch && validHandlerVerbs.includes(verbMatch[0].toLowerCase())) {
-//         return 'handler'
-//       }
-//     }
-//   } else if (dirent.isDirectory()) {
-//     if (dirent.name === '.middleware') {
-//       return 'middleware'
-//     }
-//     return 'dir'
-//   }
-// }
