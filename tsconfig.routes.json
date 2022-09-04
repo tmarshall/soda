@@ -1,9 +1,24 @@
 {
-  "references": [
-    { "path": "./tsconfig.base.json" }
-  ],
   "compilerOptions": {
+    "target": "es2021",
+    "module": "commonjs",
+    "lib": ["es2021"],
+
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "noEmitOnError": true,
+
+    "declaration": true,
+    "declarationMap": true,
+
     "outDir": "dist/routes"
   },
-  "include": ["routes/"]
+  "include": ["routes/"],
+  "exclude": ["node_modules"]
 }

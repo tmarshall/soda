@@ -12,10 +12,13 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
+    "noEmitOnError": true,
 
-    "composite": true,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+
+    "outDir": "dist/src"
   },
+  "include": ["src"],
   "exclude": ["node_modules"]
 }

@@ -1,9 +1,0 @@
-{
-  "references": [
-    { "path": "./tsconfig.base.json" }
-  ],
-  "compilerOptions": {
-    "outDir": "dist/src"
-  },
-  "include": ["src/"]
-}
