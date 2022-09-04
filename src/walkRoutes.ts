@@ -1,6 +1,6 @@
 import { Dirent } from 'node:fs'
 import { readdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import { resolve as resolvePath } from 'node:path'
 
 enum RouteVerb {
   All = 'all',
@@ -33,7 +33,7 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string): Prom
     
     if (dirent.isDirectory()) {
       if (dirent.name.slice(0, 1) !== '.') {
-        const subdirPath = join(currentDirPath, dirent.name)
+        const subdirPath = resolvePath(currentDirPath, dirent.name)
         subdirsPending.push([subdirPath, readdir(subdirPath, { withFileTypes: true })])
       }
       continue
@@ -43,11 +43,11 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string): Prom
       continue
     }
     const filename = dirent.name.slice(-3).toLowerCase()
-    if (filename.slice(-3) !== '.js' && filename.slice(-3) !== '.ts') {
-      continue
-    }
+    // if (filename.slice(-3) !== '.js' && filename.slice(-3) !== '.ts') {
+    //   continue
+    // }
 
-    handlers.push(...getRoutesFromFile(join(currentDirPath, dirent.name)))
+    handlers.push(...(await getRoutesFromFile(resolvePath(currentDirPath, dirent.name))))
   }
 
   const pendingSubWalks: Promise<RouteDefinition[]>[] = []
@@ -64,10 +64,11 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string): Prom
   }, handlers)
 }
 
-function getRoutesFromFile(filePath: string) {
+async function getRoutesFromFile(filePath: string) {
   const handlers: RouteDefinition[] = []
 
-  // todo: read file content
+  const fileModule = await import(filePath)
+  console.log('MODULE', fileModule)
 
   return handlers
 }

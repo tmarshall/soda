@@ -4,8 +4,6 @@
     "module": "commonjs",
     "lib": ["es2021"],
 
-    "outDir": "dist",
-
     "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
@@ -13,8 +11,11 @@
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true
   },
-  "include": ["src"],
   "exclude": ["node_modules"]
 }

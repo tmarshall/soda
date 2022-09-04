@@ -1,0 +1,9 @@
+{
+  "references": [
+    { "path": "./tsconfig.base.json" }
+  ],
+  "compilerOptions": {
+    "outDir": "dist/routes"
+  },
+  "include": ["routes/"]
+}
