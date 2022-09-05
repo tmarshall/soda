@@ -15,7 +15,7 @@ export enum RouteVerb {
   connect = 'connect',
 }
 
-type RouteVerbKey = keyof typeof RouteVerb
+export type RouteVerbKey = keyof typeof RouteVerb
 
 const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
 
