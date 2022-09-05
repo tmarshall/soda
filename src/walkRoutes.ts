@@ -53,8 +53,8 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string, baseD
     if (!dirent.isFile()) {
       continue
     }
-    const filename = dirent.name.slice(-3).toLowerCase()
-    if (filename.slice(-3) !== '.js' || filename.slice(0, 1) === '.') {
+    const filenameLowercased = dirent.name.toLowerCase()
+    if (filenameLowercased.slice(-3) !== '.js' || filenameLowercased.slice(0, 1) === '.') {
       continue
     }
 
