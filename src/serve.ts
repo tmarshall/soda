@@ -43,8 +43,23 @@ export default async function(dirpath?: string) {
       return plainRoutes[verbMethod][req.url].func(req, res)
     }
 
+    
     for (let routeDef of paramRoutes) {
-      console.log(routeDef.path)
+      if (routeDef.type !== 'params') {
+        continue
+      }
+        
+      const match = req.url?.match(routeDef.path)
+      if (!match) {
+        continue
+      }
+
+      const params: Record<string, string | number> = { ...match.groups }
+      for (let key in params) {
+        if (routeDef.paramMutators[key as string]) {
+          params[key] = routeDef.paramMutators[key](match.groups![key])
+        }
+      }
     }
 
     res.writeHead(404)

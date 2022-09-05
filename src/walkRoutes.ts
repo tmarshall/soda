@@ -19,6 +19,8 @@ export type RouteVerbKey = keyof typeof RouteVerb
 
 const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
 
+type MutatorCollection = Record<string, (paramString: string) => string | number>
+
 interface RouteDefinitionBase {
   verb: RouteVerbKey,
   func: Function
@@ -127,24 +129,25 @@ const typedParamAttributes = {
     mutator: (paramString: string) => paramString,
   },
   [ParamTypes.number]: {
-    regExpStr: (paramName: string) => `/(?<${paramName}>\d+(?:\.\d+)?)`,
+    regExpStr: (paramName: string) => `/(?<${paramName}>\\d+(?:\\.\\d+)?)`,
     mutator: (paramString: string) => Number(paramString)
   },
 }
 const typedParamChoices = Object.keys(ParamTypes).join('|')
-const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
+
 
 function escapeRegex(input: string): string {
   return input.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
-type MutatorCollection = Record<string, (paramString: string) => string | number>
-
 // routes like `/users/me` will return the plain strings
 // routes like `/users/[id]` will return a regex, to match `[id]`
 // routes like `/users/[number:id]` will return a regex, to match typed params
 function prepareRoutePath(verb: RouteVerbKey, routePath: string, func: Function): RouteDefinition {
+  const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
+
   if (!pathParamCheck.test(routePath)) {
+    console.log('prepareRoutePath', routePath, 'plain', pathParamCheck.test(routePath))
     return {
       type: 'plain',
       verb,
@@ -153,6 +156,7 @@ function prepareRoutePath(verb: RouteVerbKey, routePath: string, func: Function)
       func,
     }
   }
+  console.log('prepareRoutePath', routePath, 'params')
 
   const mutators: MutatorCollection = {}
   const parts = routePath.split(pathParamCheck)
