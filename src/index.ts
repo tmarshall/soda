@@ -1,8 +1,12 @@
-import { createServer } from 'node:http'
+import type { IncomingMessage } from 'node:http'
 import { program } from 'commander'
 
 import serve from './serve'
 import walkRoutes from './walkRoutes'
+
+export interface SodaRequest extends IncomingMessage {
+  params: Record<string, string>
+}
 
 if (require.main === module) {
   program
@@ -27,15 +31,3 @@ module.exports = {
   serve,
   walkRoutes,
 }
-
-// const server = createServer()
-
-// server.on('request', (req, res) => {
-//   res.writeHead(200, { 'Content-Type': 'application/json' })
-//   res.end(JSON.stringify({
-//     works: true,
-//   }))
-// })
-
-// server.listen(4000)
-// console.log('server listening on 4000')
