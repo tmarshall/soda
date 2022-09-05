@@ -21,7 +21,7 @@ const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
 
 export interface RouteDefinition {
   verb: RouteVerbKey,
-  path: string,
+  path: string | RegExp,
   func: Function,
 }
 
@@ -99,11 +99,33 @@ async function getRoutesFromFile(fileName: string, filePath: string, baseDirPath
     if (verbKeyValue in fileModule) {
       handlers.push({
         verb: verbKey,
-        path: routePath,
+        path: determineRoutePathUsed(routePath),
         func: fileModule[verbKeyValue],
       })
     }
   }
 
   return handlers
+}
+
+const typedParamMutators = {
+  string: () => {},
+  number: () => {},
+}
+const typedParamChoices = Object.keys(typedParamMutators).join('|')
+const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?:/|$)`, 'g')
+
+// routes like `/users/me` will return the plain strings
+// routes like `/users/[id]` will return a regex, to match `[id]`
+// routes like `/users/[number:id]` will return a regex, to match typed params
+function determineRoutePathUsed(routePath: string): string | RegExp {
+  const paramMatches = [...routePath.matchAll(pathParamCheck)]
+
+  if (!paramMatches.length) {
+    return routePath
+  }
+
+  console.log('PARAM MATCHES', paramMatches)
+
+  return routePath
 }
