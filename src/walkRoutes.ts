@@ -2,7 +2,7 @@ import { Dirent } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 
-enum RouteVerb {
+export enum RouteVerb {
   all = 'all',
   head = 'head',
   get = 'get',
@@ -19,12 +19,24 @@ type RouteVerbKey = keyof typeof RouteVerb
 
 const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
 
-export interface RouteDefinition {
+interface RouteDefinitionBase {
   verb: RouteVerbKey,
-  path: string | RegExp,
-  paramMutators: MutatorCollection,
-  func: Function,
+  func: Function
 }
+interface RouteDefinitionPlain {
+  type: 'plain',
+  path: string,
+  paramMutators: {},
+}
+interface RouteDefinitionParams {
+  type: 'params',
+  path: RegExp,
+  paramMutators: MutatorCollection,
+}
+
+export type RouteDefinition = RouteDefinitionBase & (
+  RouteDefinitionPlain | RouteDefinitionParams
+)
 
 export default async function walkRoutes(dirpath = './routes') {
   // reading in the base dir, and kicking of a recursive walk
@@ -98,13 +110,7 @@ async function getRoutesFromFile(fileName: string, filePath: string, baseDirPath
   for (let verbKey of routeVerbExports) {
     const verbKeyValue = RouteVerb[verbKey]
     if (verbKeyValue in fileModule) {
-      const [handlerPath, paramMutators] = prepareRoutePath(routePath)
-      handlers.push({
-        verb: verbKey,
-        path: handlerPath,
-        paramMutators,
-        func: fileModule[verbKeyValue],
-      })
+      handlers.push(prepareRoutePath(verbKey, routePath, fileModule[verbKeyValue]))
     }
   }
 
@@ -137,9 +143,15 @@ type MutatorCollection = Record<string, (paramString: string) => string | number
 // routes like `/users/me` will return the plain strings
 // routes like `/users/[id]` will return a regex, to match `[id]`
 // routes like `/users/[number:id]` will return a regex, to match typed params
-function prepareRoutePath(routePath: string): [string, {}] | [RegExp, MutatorCollection] {
+function prepareRoutePath(verb: RouteVerbKey, routePath: string, func: Function): RouteDefinition {
   if (!pathParamCheck.test(routePath)) {
-    return [routePath, {}]
+    return {
+      type: 'plain',
+      verb,
+      path: routePath,
+      paramMutators: {},
+      func,
+    }
   }
 
   const mutators: MutatorCollection = {}
@@ -162,5 +174,11 @@ function prepareRoutePath(routePath: string): [string, {}] | [RegExp, MutatorCol
   }
   resultRegExpString = resultRegExpString + '$'
   
-  return [new RegExp(resultRegExpString), mutators]
+  return {
+    type: 'params',
+    verb,
+    path: new RegExp(resultRegExpString),
+    paramMutators: mutators,
+    func,
+  }
 }
