@@ -22,6 +22,7 @@ const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
 export interface RouteDefinition {
   verb: RouteVerbKey,
   path: string | RegExp,
+  paramMutators: MutatorCollection,
   func: Function,
 }
 
@@ -97,9 +98,11 @@ async function getRoutesFromFile(fileName: string, filePath: string, baseDirPath
   for (let verbKey of routeVerbExports) {
     const verbKeyValue = RouteVerb[verbKey]
     if (verbKeyValue in fileModule) {
+      const [handlerPath, paramMutators] = prepareRoutePath(routePath)
       handlers.push({
         verb: verbKey,
-        path: determineRoutePathUsed(routePath),
+        path: handlerPath,
+        paramMutators,
         func: fileModule[verbKeyValue],
       })
     }
@@ -108,24 +111,56 @@ async function getRoutesFromFile(fileName: string, filePath: string, baseDirPath
   return handlers
 }
 
-const typedParamMutators = {
-  string: () => {},
-  number: () => {},
+enum ParamTypes {
+  string,
+  number
 }
-const typedParamChoices = Object.keys(typedParamMutators).join('|')
-const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?:/|$)`, 'g')
+const typedParamAttributes = {
+  [ParamTypes.string]: {
+    regExpStr: (paramName: string) => `/(?<${paramName}>[^/]+)`,
+    mutator: (paramString: string) => paramString,
+  },
+  [ParamTypes.number]: {
+    regExpStr: (paramName: string) => `/(?<${paramName}>\d+(?:\.\d+)?)`,
+    mutator: (paramString: string) => Number(paramString)
+  },
+}
+const typedParamChoices = Object.keys(ParamTypes).join('|')
+const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
+
+function escapeRegex(input: string): string {
+  return input.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
+type MutatorCollection = Record<string, (paramString: string) => string | number>
 
 // routes like `/users/me` will return the plain strings
 // routes like `/users/[id]` will return a regex, to match `[id]`
 // routes like `/users/[number:id]` will return a regex, to match typed params
-function determineRoutePathUsed(routePath: string): string | RegExp {
-  const paramMatches = [...routePath.matchAll(pathParamCheck)]
-
-  if (!paramMatches.length) {
-    return routePath
+function prepareRoutePath(routePath: string): [string, {}] | [RegExp, MutatorCollection] {
+  if (!pathParamCheck.test(routePath)) {
+    return [routePath, {}]
   }
 
-  console.log('PARAM MATCHES', paramMatches)
+  const mutators: MutatorCollection = {}
+  const parts = routePath.split(pathParamCheck)
+  let resultRegExpString = '^'
 
-  return routePath
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 3 === 0) {
+      resultRegExpString += escapeRegex(parts[i])
+      continue
+    }
+
+    const paramType = (parts[i] || 'string') as keyof typeof ParamTypes
+    const paramName = parts[i + 1]
+    i = i + 1
+
+    const paramAttributes = typedParamAttributes[ParamTypes[paramType]]
+    resultRegExpString += paramAttributes.regExpStr(paramName)
+    mutators[paramName] = paramAttributes.mutator
+  }
+  resultRegExpString = resultRegExpString + '$'
+  
+  return [new RegExp(resultRegExpString), mutators]
 }
