@@ -36,7 +36,6 @@ export default async function(dirpath?: string) {
   
   server.on('request', (req: IncomingMessage, res: ServerResponse) => {
     const sodaReq: SodaRequest = Object.assign({ params: {} }, req)
-    // console.log('INCOMING: ', req.method, req.url)
 
     const verbMethod = req.method?.toLowerCase() as RouteVerbKey
 
@@ -55,22 +54,3 @@ export default async function(dirpath?: string) {
   server.listen(port)
   console.log(`soda listening on :${port}`)
 }
-
-// const express = require('express')
-// const soda = require('soda')
-
-// const app = express()
-
-// const port = env.SODA_PORT || 4000
-
-// const startup = async () => {
-//   const routes = await soda.walkRoutes('./routes')
-
-//   routes.forEach(({ verb, path, func }) => {
-//     app[verb](path, func)
-//   })
-
-//   app.listen(port)
-//   console.log('Server listening on :5555')
-// }
-// startup()

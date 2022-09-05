@@ -4,7 +4,6 @@
   "description": "",
   "scripts": {
     "build": "tsc",
-    "build:routes": "tsc -p ./tsconfig.routes.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
