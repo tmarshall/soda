@@ -2,7 +2,7 @@ import { Dirent } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 
-enum RouteVerb {
+export enum RouteVerb {
   all = 'all',
   head = 'head',
   get = 'get',
@@ -15,15 +15,30 @@ enum RouteVerb {
   connect = 'connect',
 }
 
-type RouteVerbKey = keyof typeof RouteVerb
+export type RouteVerbKey = keyof typeof RouteVerb
 
 const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
 
-export interface RouteDefinition {
+type MutatorCollection = Record<string, (paramString: string) => string | number>
+
+interface RouteDefinitionBase {
   verb: RouteVerbKey,
-  path: string,
-  func: Function,
+  func: Function
 }
+interface RouteDefinitionPlain {
+  type: 'plain',
+  path: string,
+  paramMutators: {},
+}
+interface RouteDefinitionParams {
+  type: 'params',
+  path: RegExp,
+  paramMutators: MutatorCollection,
+}
+
+export type RouteDefinition = RouteDefinitionBase & (
+  RouteDefinitionPlain | RouteDefinitionParams
+)
 
 export default async function walkRoutes(dirpath = './routes') {
   // reading in the base dir, and kicking of a recursive walk
@@ -53,8 +68,8 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string, baseD
     if (!dirent.isFile()) {
       continue
     }
-    const filename = dirent.name.slice(-3).toLowerCase()
-    if (filename.slice(-3) !== '.js' || filename.slice(0, 1) === '.') {
+    const filenameLowercased = dirent.name.toLowerCase()
+    if (filenameLowercased.slice(-3) !== '.js' || filenameLowercased.slice(0, 1) === '.') {
       continue
     }
 
@@ -97,13 +112,75 @@ async function getRoutesFromFile(fileName: string, filePath: string, baseDirPath
   for (let verbKey of routeVerbExports) {
     const verbKeyValue = RouteVerb[verbKey]
     if (verbKeyValue in fileModule) {
-      handlers.push({
-        verb: verbKey,
-        path: routePath,
-        func: fileModule[verbKeyValue],
-      })
+      handlers.push(prepareRoutePath(verbKey, routePath, fileModule[verbKeyValue]))
     }
   }
 
   return handlers
+}
+
+enum ParamTypes {
+  string,
+  number
+}
+const typedParamAttributes = {
+  [ParamTypes.string]: {
+    regExpStr: (paramName: string) => `/(?<${paramName}>[^/]+)`,
+    mutator: (paramString: string) => paramString,
+  },
+  [ParamTypes.number]: {
+    regExpStr: (paramName: string) => `/(?<${paramName}>\\d+(?:\\.\\d+)?)`,
+    mutator: (paramString: string) => Number(paramString)
+  },
+}
+const typedParamChoices = Object.keys(ParamTypes).join('|')
+
+
+function escapeRegex(input: string): string {
+  return input.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
+// routes like `/users/me` will return the plain strings
+// routes like `/users/[id]` will return a regex, to match `[id]`
+// routes like `/users/[number:id]` will return a regex, to match typed params
+function prepareRoutePath(verb: RouteVerbKey, routePath: string, func: Function): RouteDefinition {
+  const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
+
+  if (!pathParamCheck.test(routePath)) {
+    return {
+      type: 'plain',
+      verb,
+      path: routePath,
+      paramMutators: {},
+      func,
+    }
+  }
+
+  const mutators: MutatorCollection = {}
+  const parts = routePath.split(pathParamCheck)
+  let resultRegExpString = '^'
+
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 3 === 0) {
+      resultRegExpString += escapeRegex(parts[i])
+      continue
+    }
+
+    const paramType = (parts[i] || 'string') as keyof typeof ParamTypes
+    const paramName = parts[i + 1]
+    i = i + 1
+
+    const paramAttributes = typedParamAttributes[ParamTypes[paramType]]
+    resultRegExpString += paramAttributes.regExpStr(paramName)
+    mutators[paramName] = paramAttributes.mutator
+  }
+  resultRegExpString = resultRegExpString + '$'
+  
+  return {
+    type: 'params',
+    verb,
+    path: new RegExp(resultRegExpString),
+    paramMutators: mutators,
+    func,
+  }
 }
