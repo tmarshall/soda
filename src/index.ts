@@ -5,7 +5,7 @@ import serve from './serve'
 import walkRoutes from './walkRoutes'
 
 export interface SodaRequest extends IncomingMessage {
-  params: Record<string, string>
+  params: Record<string, string | number>
 }
 
 if (require.main === module) {

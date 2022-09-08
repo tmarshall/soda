@@ -12,12 +12,17 @@ export default async function(dirpath?: string) {
   const routes = await walkRoutes(dirpath)
   console.log(dirpath, routes)
 
-  const initialPlainRoutes = Object.keys(RouteVerb).reduce((mapping: Record<string, Record<string, RouteDefinition>>, verb) => {
-    mapping[verb] = {}
-    return mapping
-  }, {})
-
-  const initialParamRoutes: RouteDefinition[] = []
+  const [initialPlainRoutes, initialParamRoutes] = Object.keys(RouteVerb).reduce((
+    [plainRoutes, paramRoutes]: [
+      Record<string, Record<string, RouteDefinition>>,
+      Record<string, RouteDefinition[]>
+    ],
+    verb
+  ) => {
+    plainRoutes[verb] = {}
+    paramRoutes[verb] = []
+    return [plainRoutes, paramRoutes]
+  }, [{}, {}])
   
   const [plainRoutes, paramRoutes] = routes.reduce((
     [plainRoutes, paramRoutes],
@@ -28,7 +33,7 @@ export default async function(dirpath?: string) {
       return [plainRoutes, paramRoutes]
     }
 
-    paramRoutes.push(routeDef)
+    paramRoutes[routeDef.verb].push(routeDef)
     return [plainRoutes, paramRoutes]
   }, [initialPlainRoutes, initialParamRoutes])
 
@@ -40,11 +45,11 @@ export default async function(dirpath?: string) {
     const verbMethod = req.method?.toLowerCase() as RouteVerbKey
 
     if (req.url && plainRoutes[verbMethod]?.[req.url]) {
-      return plainRoutes[verbMethod][req.url].func(req, res)
+      return plainRoutes[verbMethod][req.url].func(sodaReq, res)
     }
 
     
-    for (let routeDef of paramRoutes) {
+    for (let routeDef of (paramRoutes[verbMethod] ?? [])) {
       if (routeDef.type !== 'params') {
         continue
       }
@@ -60,6 +65,8 @@ export default async function(dirpath?: string) {
           params[key] = routeDef.paramMutators[key](match.groups![key])
         }
       }
+      sodaReq.params = params
+      return routeDef.func(sodaReq, res)
     }
 
     res.writeHead(404)
