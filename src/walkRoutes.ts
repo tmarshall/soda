@@ -147,7 +147,6 @@ function prepareRoutePath(verb: RouteVerbKey, routePath: string, func: Function)
   const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
 
   if (!pathParamCheck.test(routePath)) {
-    console.log('prepareRoutePath', routePath, 'plain', pathParamCheck.test(routePath))
     return {
       type: 'plain',
       verb,
@@ -156,7 +155,6 @@ function prepareRoutePath(verb: RouteVerbKey, routePath: string, func: Function)
       func,
     }
   }
-  console.log('prepareRoutePath', routePath, 'params')
 
   const mutators: MutatorCollection = {}
   const parts = routePath.split(pathParamCheck)

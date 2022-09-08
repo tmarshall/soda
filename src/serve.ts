@@ -10,7 +10,6 @@ const port = env.SODA_PORT || 4000
 
 export default async function(dirpath?: string) {
   const routes = await walkRoutes(dirpath)
-  console.log(dirpath, routes)
 
   const [initialPlainRoutes, initialParamRoutes] = Object.keys(RouteVerb).reduce((
     [plainRoutes, paramRoutes]: [
