@@ -190,7 +190,7 @@ async function getRoutesFromFile({
         routePath,
         func: fileModule[verbKeyValue],
         currentMiddleware,
-      ))
+      }))
     }
   }
 
