@@ -1,4 +1,5 @@
 import type { IncomingMessage } from 'node:http'
+
 import { program } from 'commander'
 
 import serve from './serve'
