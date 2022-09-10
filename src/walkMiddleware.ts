@@ -6,13 +6,16 @@ export interface MiddlewareDefinition {
   middleware: Record<string, Function>
 }
 
-export default async function walkMiddleware(dirpath = './middleware') {
+export default async function walkMiddleware(dirpath = './middleware'): Promise<MiddlewareDefinition> {
   // reading in the base dir, and kicking of a recursive walk
   let baseDir
   try {
     baseDir = await readdir(dirpath, { withFileTypes: true })
   } catch {
-    return {}
+    return {
+      enabled: {},
+      middleware: {},
+    }
   }
   const result: MiddlewareDefinition = {
     enabled: {},
@@ -32,7 +35,7 @@ export default async function walkMiddleware(dirpath = './middleware') {
     const fileModule = await import(path.resolve(path.join(dirpath, './' + dirent.name)))
     const middlewareName = path.basename(dirent.name, path.extname(dirent.name))
     result.middleware[middlewareName] = fileModule.default
-    result.enabled[middlewareName] = fileModule.enaled ?? false,
+    result.enabled[middlewareName] = fileModule.enaled ?? false
   }
 
   return result
