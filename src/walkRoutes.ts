@@ -90,8 +90,6 @@ async function walkDirectory({
   const pendingHandlers: Promise<RouteDefinition[]>[] = []
   const acceptedFilepaths: string[] = []
 
-  console.log('>> walkDirectory', currentDirPath, currentMiddleware)
-
   // walking the directory
   //   sub-directories will be read in, and stashed for a recursive walk
   //   javascript files will be processed immediately
@@ -117,7 +115,6 @@ async function walkDirectory({
       const middlewareMutator = (await import(middlewareMutatorPath)).default
       currentMiddlewareEnabled = middlewareMutator([...currentMiddlewareEnabled])
       currentMiddleware = rebuildCurrentMiddleware(currentMiddlewareEnabled)
-      console.log('>>! hit middleware', currentMiddleware)
       continue
     }
 
@@ -140,7 +137,6 @@ async function walkDirectory({
   }))
 
   // walking sub-directories
-  console.log('triggering sub-dir walks')
   const pendingSubWalks: Promise<RouteDefinition[]>[] = []
   for (let i = 0; i < pendingSubdirs.length; i++) {
     const [subdirPath, subdirRead] = pendingSubdirs[i]
@@ -259,14 +255,12 @@ function prepareRoutePath({
   currentMiddlewareEnabled: string[],
   rebuildCurrentMiddleware: RebuildCurrentMiddleware,
 }): RouteDefinition {
-  console.log('preparing route', verb, routePath, currentMiddleware)
   const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
 
   if (func.middleware) {
     const middlewareMutator = func.middleware
     currentMiddleware = rebuildCurrentMiddleware(middlewareMutator([...currentMiddlewareEnabled]))
   }
-  console.log('...', currentMiddleware)
 
   let preparedFunc: Function
   if (currentMiddleware.length) {
@@ -279,8 +273,6 @@ function prepareRoutePath({
   } else {
     preparedFunc = func
   }
-
-  console.log('preparedFunc', preparedFunc.toString())
 
   if (!pathParamCheck.test(routePath)) {
     return {
