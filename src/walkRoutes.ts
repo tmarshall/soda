@@ -124,7 +124,12 @@ async function walkDirectory({
   }
 
   pendingHandlers.push(...acceptedFilepaths.map((filepath: string) => {
-    return getRoutesFromFile(path.basename(filepath), filepath, baseDirPath)
+    return getRoutesFromFile({
+      fileName: path.basename(filepath),
+      filepath,
+      baseDirPath,
+      currentMiddleware
+    })
   }))
 
   // walking sub-directories
@@ -155,22 +160,37 @@ async function walkDirectory({
   }, [])
 }
 
-async function getRoutesFromFile(fileName: string, filePath: string, baseDirPath: string) {
+async function getRoutesFromFile({
+  fileName,
+  filepath,
+  baseDirPath,
+  currentMiddleware,
+}: {
+  fileName: string,
+  filepath: string,
+  baseDirPath: string,
+  currentMiddleware: Function[],
+}) {
   const handlers: RouteDefinition[] = []
 
-  const fileModule = await import(path.resolve(filePath))
+  const fileModule = await import(path.resolve(filepath))
 
   const routePathInner = fileName.toLowerCase() === 'index.js' ?
     // `some/path` instead of `some/path/index.js`
-    path.dirname(filePath) :
+    path.dirname(filepath) :
     // `some/path/endpoint` instead of `some/path/endpoint.js`
-    filePath.slice(0, filePath.length - path.extname(filePath).length)
+    filepath.slice(0, filepath.length - path.extname(filepath).length)
   const routePath = '/' + path.relative(baseDirPath, routePathInner)
 
   for (let verbKey of routeVerbExports) {
     const verbKeyValue = RouteVerb[verbKey]
     if (verbKeyValue in fileModule) {
-      handlers.push(prepareRoutePath(verbKey, routePath, fileModule[verbKeyValue]))
+      handlers.push(prepareRoutePath({
+        verb: verbKey,
+        routePath,
+        func: fileModule[verbKeyValue],
+        currentMiddleware,
+      ))
     }
   }
 
@@ -201,7 +221,17 @@ function escapeRegex(input: string): string {
 // routes like `/users/me` will return the plain strings
 // routes like `/users/[id]` will return a regex, to match `[id]`
 // routes like `/users/[number:id]` will return a regex, to match typed params
-function prepareRoutePath(verb: RouteVerbKey, routePath: string, func: Function): RouteDefinition {
+function prepareRoutePath({
+  verb,
+  routePath,
+  func,
+  currentMiddleware
+}: {
+  verb: RouteVerbKey,
+  routePath: string,
+  func: Function,
+  currentMiddleware: Function[],
+}): RouteDefinition {
   const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
 
   if (!pathParamCheck.test(routePath)) {
