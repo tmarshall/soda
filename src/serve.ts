@@ -50,7 +50,6 @@ export default async function(routesDirpath?: string, middlewareDirpath?: string
       return plainRoutes[verbMethod][req.url].func(sodaReq, res)
     }
 
-    
     for (let routeDef of (paramRoutes[verbMethod] ?? [])) {
       if (routeDef.type !== 'params') {
         continue
