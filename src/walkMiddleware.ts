@@ -3,7 +3,7 @@ import path from 'node:path'
 
 export interface MiddlewareDefinition {
   enabled: Record<string, boolean>
-  middleware: Record<string, Function>
+  functions: Record<string, Function>
 }
 
 export default async function walkMiddleware(dirpath = './middleware'): Promise<MiddlewareDefinition> {
@@ -14,12 +14,12 @@ export default async function walkMiddleware(dirpath = './middleware'): Promise<
   } catch {
     return {
       enabled: {},
-      middleware: {},
+      functions: {},
     }
   }
   const result: MiddlewareDefinition = {
     enabled: {},
-    middleware: {},
+    functions: {},
   }
   
   for (let dirent of baseDir) {
@@ -34,7 +34,7 @@ export default async function walkMiddleware(dirpath = './middleware'): Promise<
 
     const fileModule = await import(path.resolve(path.join(dirpath, './' + dirent.name)))
     const middlewareName = path.basename(dirent.name, path.extname(dirent.name))
-    result.middleware[middlewareName] = fileModule.default
+    result.functions[middlewareName] = fileModule.default
     result.enabled[middlewareName] = fileModule.enaled ?? false
   }
 
