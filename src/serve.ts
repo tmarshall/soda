@@ -8,8 +8,8 @@ import type { SodaRequest } from '.'
 
 const port = env.SODA_PORT || 4000
 
-export default async function(dirpath?: string) {
-  const routes = await walkRoutes(dirpath)
+export default async function(routesDirpath?: string, middlewareDirpath?: string) {
+  const routes = await walkRoutes(routesDirpath)
 
   const [initialPlainRoutes, initialParamRoutes] = Object.keys(RouteVerb).reduce((
     [plainRoutes, paramRoutes]: [
