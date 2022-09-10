@@ -45,12 +45,48 @@ export type RouteDefinition = RouteDefinitionBase & (
 export default async function walkRoutes(dirpath = './routes', middleware: MiddlewareDefinition) {
   // reading in the base dir, and kicking of a recursive walk
   const baseDir = await readdir(dirpath, { withFileTypes: true })
-  return await walkDirectory(baseDir, dirpath, dirpath)
+  const rebuildCurrentMiddleware = (enabled: string[]) => buildMiddlewareArray(middleware.functions, enabled)
+  const currentMiddlewareEnabled = [...middleware.enabled]
+  const currentMiddleware = rebuildCurrentMiddleware(currentMiddlewareEnabled)
+
+  return await walkDirectory({
+    currentDir: baseDir,
+    currentDirPath: dirpath,
+    baseDirPath: dirpath,
+    currentMiddlewareEnabled,
+    currentMiddleware: currentMiddleware,
+    rebuildCurrentMiddleware,
+  })
 }
 
-async function walkDirectory(currentDir: Dirent[], currentDirPath: string, baseDirPath: string): Promise<RouteDefinition[]> {
+function buildMiddlewareArray(allMiddlewareFunctions: Record<string, Function>, enabled: string[]): Function[] {
+  return enabled.map((enabledName: string) => {
+    const func = allMiddlewareFunctions[enabledName]
+    if (func === undefined) {
+      throw new Error(`Expected middelware function named ${enabledName}, but it does not exist`)
+    }
+    return func
+  })
+}
+
+async function walkDirectory({
+  currentDir,
+  currentDirPath,
+  baseDirPath,
+  currentMiddlewareEnabled,
+  currentMiddleware,
+  rebuildCurrentMiddleware,
+}: {
+  currentDir: Dirent[],
+  currentDirPath: string,
+  baseDirPath: string
+  currentMiddlewareEnabled: string[],
+  currentMiddleware: Function[],
+  rebuildCurrentMiddleware: (enabled: string[]) => Function[],
+}): Promise<RouteDefinition[]> {
   const pendingSubdirs: [string, Promise<Dirent[]>][] = []
   const pendingHandlers: Promise<RouteDefinition[]>[] = []
+  const acceptedFilepaths: string[] = []
 
   // walking the directory
   //   sub-directories will be read in, and stashed for a recursive walk
@@ -71,19 +107,39 @@ async function walkDirectory(currentDir: Dirent[], currentDirPath: string, baseD
       continue
     }
     const filenameLowercased = dirent.name.toLowerCase()
+
+    if (filenameLowercased === '.middleware.js') {
+      const middlewareMutatorPath = path.resolve(path.join(currentDirPath, './' + dirent.name))
+      const middlewareMutator = (await import(middlewareMutatorPath)).deafult
+      currentMiddlewareEnabled = middlewareMutator([...currentMiddlewareEnabled])
+      currentMiddleware = rebuildCurrentMiddleware(currentMiddlewareEnabled)
+      continue
+    }
+
     if (filenameLowercased.slice(-3) !== '.js' || filenameLowercased.slice(0, 1) === '.') {
       continue
     }
 
-    pendingHandlers.push(getRoutesFromFile(dirent.name, path.join(currentDirPath, './' + dirent.name), baseDirPath))
+    acceptedFilepaths.push(path.join(currentDirPath, './' + dirent.name))
   }
+
+  pendingHandlers.push(...acceptedFilepaths.map((filepath: string) => {
+    return getRoutesFromFile(path.basename(filepath), filepath, baseDirPath)
+  }))
 
   // walking sub-directories
   const pendingSubWalks: Promise<RouteDefinition[]>[] = []
   for (let i = 0; i < pendingSubdirs.length; i++) {
     const [subdirPath, subdirRead] = pendingSubdirs[i]
     const subdir = await subdirRead
-    pendingSubWalks.push(walkDirectory(subdir, subdirPath, baseDirPath))
+    pendingSubWalks.push(walkDirectory({
+      currentDir: subdir,
+      currentDirPath: subdirPath,
+      baseDirPath,
+      currentMiddlewareEnabled,
+      currentMiddleware,
+      rebuildCurrentMiddleware,
+    }))
   }
 
   // waiting for all sub-directories and files to finish processing
