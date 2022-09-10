@@ -1,11 +1,12 @@
-import { Dirent } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 
-export interface MiddlewareDefinition {
+interface MiddlewareItem {
   func: Function,
   enabledByDefault: boolean
 }
+
+export type MiddlewareDefinition = Record<string, MiddlewareItem>
 
 export default async function walkMiddleware(dirpath = './middleware') {
   // reading in the base dir, and kicking of a recursive walk
@@ -15,7 +16,7 @@ export default async function walkMiddleware(dirpath = './middleware') {
   } catch {
     return {}
   }
-  const result: Record<string, MiddlewareDefinition> = {}
+  const result: MiddlewareDefinition = {}
   
   for (let dirent of baseDir) {
     if (!dirent.isFile()) {
@@ -28,7 +29,7 @@ export default async function walkMiddleware(dirpath = './middleware') {
     }
 
     const fileModule = await import(path.resolve(path.join(dirpath, './' + dirent.name)))
-    const definition: MiddlewareDefinition = {
+    const definition: MiddlewareItem = {
       func: fileModule.default,
       enabledByDefault: fileModule.enaled ?? false,
     }

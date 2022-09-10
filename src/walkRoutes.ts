@@ -1,3 +1,5 @@
+import type { MiddlewareDefinition } from './walkMiddleware'
+
 import { Dirent } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
@@ -40,7 +42,7 @@ export type RouteDefinition = RouteDefinitionBase & (
   RouteDefinitionPlain | RouteDefinitionParams
 )
 
-export default async function walkRoutes(dirpath = './routes') {
+export default async function walkRoutes(dirpath = './routes', middleware: MiddlewareDefinition) {
   // reading in the base dir, and kicking of a recursive walk
   const baseDir = await readdir(dirpath, { withFileTypes: true })
   return await walkDirectory(baseDir, dirpath, dirpath)

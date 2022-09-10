@@ -1,15 +1,18 @@
-import { env } from 'node:process'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { RouteDefinition, RouteVerbKey } from './walkRoutes'
+import type { SodaRequest } from '.'
+
+import { env } from 'node:process'
 import { createServer } from 'node:http'
 
 import walkRoutes, { RouteVerb } from './walkRoutes'
-import type { RouteDefinition, RouteVerbKey } from './walkRoutes'
-import type { SodaRequest } from '.'
+import walkMiddleware from './walkMiddleware'
 
 const port = env.SODA_PORT || 4000
 
 export default async function(routesDirpath?: string, middlewareDirpath?: string) {
-  const routes = await walkRoutes(routesDirpath)
+  const middleware = await walkMiddleware(middlewareDirpath)
+  const routes = await walkRoutes(routesDirpath, middleware)
 
   const [initialPlainRoutes, initialParamRoutes] = Object.keys(RouteVerb).reduce((
     [plainRoutes, paramRoutes]: [
