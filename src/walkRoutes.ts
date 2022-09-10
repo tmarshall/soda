@@ -69,6 +69,8 @@ function buildMiddlewareArray(allMiddlewareFunctions: Record<string, Function>, 
   })
 }
 
+type RebuildCurrentMiddleware = (enabled: string[]) => Function[]
+
 async function walkDirectory({
   currentDir,
   currentDirPath,
@@ -82,11 +84,13 @@ async function walkDirectory({
   baseDirPath: string
   currentMiddlewareEnabled: string[],
   currentMiddleware: Function[],
-  rebuildCurrentMiddleware: (enabled: string[]) => Function[],
+  rebuildCurrentMiddleware: RebuildCurrentMiddleware,
 }): Promise<RouteDefinition[]> {
   const pendingSubdirs: [string, Promise<Dirent[]>][] = []
   const pendingHandlers: Promise<RouteDefinition[]>[] = []
   const acceptedFilepaths: string[] = []
+
+  console.log('>> walkDirectory', currentDirPath, currentMiddleware)
 
   // walking the directory
   //   sub-directories will be read in, and stashed for a recursive walk
@@ -113,6 +117,7 @@ async function walkDirectory({
       const middlewareMutator = (await import(middlewareMutatorPath)).default
       currentMiddlewareEnabled = middlewareMutator([...currentMiddlewareEnabled])
       currentMiddleware = rebuildCurrentMiddleware(currentMiddlewareEnabled)
+      console.log('>>! hit middleware', currentMiddleware)
       continue
     }
 
@@ -128,11 +133,14 @@ async function walkDirectory({
       fileName: path.basename(filepath),
       filepath,
       baseDirPath,
-      currentMiddleware
+      currentMiddlewareEnabled,
+      currentMiddleware,
+      rebuildCurrentMiddleware,
     })
   }))
 
   // walking sub-directories
+  console.log('triggering sub-dir walks')
   const pendingSubWalks: Promise<RouteDefinition[]>[] = []
   for (let i = 0; i < pendingSubdirs.length; i++) {
     const [subdirPath, subdirRead] = pendingSubdirs[i]
@@ -165,11 +173,15 @@ async function getRoutesFromFile({
   filepath,
   baseDirPath,
   currentMiddleware,
+  currentMiddlewareEnabled,
+  rebuildCurrentMiddleware
 }: {
   fileName: string,
   filepath: string,
   baseDirPath: string,
+  currentMiddlewareEnabled: string[],
   currentMiddleware: Function[],
+  rebuildCurrentMiddleware: RebuildCurrentMiddleware,
 }) {
   const handlers: RouteDefinition[] = []
 
@@ -182,6 +194,11 @@ async function getRoutesFromFile({
     filepath.slice(0, filepath.length - path.extname(filepath).length)
   const routePath = '/' + path.relative(baseDirPath, routePathInner)
 
+  if (fileModule.middleware) {
+    const middlewareMutator = fileModule.middleware
+    currentMiddleware = rebuildCurrentMiddleware(middlewareMutator([...currentMiddlewareEnabled]))
+  }
+
   for (let verbKey of routeVerbExports) {
     const verbKeyValue = RouteVerb[verbKey]
     if (verbKeyValue in fileModule) {
@@ -190,6 +207,8 @@ async function getRoutesFromFile({
         routePath,
         func: fileModule[verbKeyValue],
         currentMiddleware,
+        currentMiddlewareEnabled,
+        rebuildCurrentMiddleware,
       }))
     }
   }
@@ -218,6 +237,10 @@ function escapeRegex(input: string): string {
   return input.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
+interface SodaRouteHandler extends Function {
+  middleware?: (currentMiddleware: string[]) => string[]
+}
+
 // routes like `/users/me` will return the plain strings
 // routes like `/users/[id]` will return a regex, to match `[id]`
 // routes like `/users/[number:id]` will return a regex, to match typed params
@@ -225,26 +248,39 @@ function prepareRoutePath({
   verb,
   routePath,
   func,
-  currentMiddleware
+  currentMiddleware,
+  currentMiddlewareEnabled,
+  rebuildCurrentMiddleware
 }: {
   verb: RouteVerbKey,
   routePath: string,
-  func: Function,
+  func: SodaRouteHandler,
   currentMiddleware: Function[],
+  currentMiddlewareEnabled: string[],
+  rebuildCurrentMiddleware: RebuildCurrentMiddleware,
 }): RouteDefinition {
+  console.log('preparing route', verb, routePath, currentMiddleware)
   const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
 
+  if (func.middleware) {
+    const middlewareMutator = func.middleware
+    currentMiddleware = rebuildCurrentMiddleware(middlewareMutator([...currentMiddlewareEnabled]))
+  }
+  console.log('...', currentMiddleware)
+
   let preparedFunc: Function
-  if (!currentMiddleware.length) {
-    preparedFunc = func
-  } else {
+  if (currentMiddleware.length) {
     preparedFunc = (...args: unknown[]) => {
       for (let middleware of currentMiddleware) {
         middleware(...args)
       }
       func(...args)
     }
+  } else {
+    preparedFunc = func
   }
+
+  console.log('preparedFunc', preparedFunc.toString())
 
   if (!pathParamCheck.test(routePath)) {
     return {
