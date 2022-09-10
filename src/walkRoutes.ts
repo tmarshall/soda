@@ -263,12 +263,24 @@ function prepareRoutePath({
     mutators[paramName] = paramAttributes.mutator
   }
   resultRegExpString = resultRegExpString + '$'
+
+  let preparedFunc: Function
+  if (!currentMiddleware.length) {
+    preparedFunc = func
+  } else {
+    preparedFunc = (...args: unknown[]) => {
+      for (let middleware of currentMiddleware) {
+        middleware(...args)
+      }
+      func(...args)
+    }
+  }
   
   return {
     type: 'params',
     verb,
     path: new RegExp(resultRegExpString),
     paramMutators: mutators,
-    func,
+    func: preparedFunc,
   }
 }

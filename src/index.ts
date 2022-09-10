@@ -13,14 +13,14 @@ if (require.main === module) {
   program
     .command('serve [routes directory] [middleware directory]')
     .description('serve a directory of routes')
-    .action(async (...args) => {
+    .action(async (...args: string[]) => {
       await serve(...args)
     })
 
   program
     .command('walk [directory]')
     .description('walk a directory of middleware, and print the results')
-    .action(async (...args) => {
+    .action(async (...args: string[]) => {
       const results = await walkMiddleware(...args)
       console.log(results)
     })
