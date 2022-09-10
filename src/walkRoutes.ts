@@ -1,8 +1,8 @@
 import type { MiddlewareDefinition } from './walkMiddleware'
 
+import path from 'node:path'
 import { Dirent } from 'node:fs'
 import { readdir } from 'node:fs/promises'
-import path from 'node:path'
 
 export enum RouteVerb {
   all = 'all',
