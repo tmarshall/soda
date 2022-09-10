@@ -9,7 +9,12 @@ export interface MiddlewareDefinition {
 
 export default async function walkMiddleware(dirpath = './middleware') {
   // reading in the base dir, and kicking of a recursive walk
-  const baseDir = await readdir(dirpath, { withFileTypes: true })
+  let baseDir
+  try {
+    baseDir = await readdir(dirpath, { withFileTypes: true })
+  } catch {
+    return {}
+  }
   const result: Record<string, MiddlewareDefinition> = {}
   
   for (let dirent of baseDir) {
