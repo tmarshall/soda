@@ -2,7 +2,7 @@ import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 
 export interface MiddlewareDefinition {
-  enabled: Record<string, boolean>
+  enabled: string[]
   functions: Record<string, Function>
 }
 
@@ -13,12 +13,12 @@ export default async function walkMiddleware(dirpath = './middleware'): Promise<
     baseDir = await readdir(dirpath, { withFileTypes: true })
   } catch {
     return {
-      enabled: {},
+      enabled: [],
       functions: {},
     }
   }
   const result: MiddlewareDefinition = {
-    enabled: {},
+    enabled: [],
     functions: {},
   }
   
@@ -28,6 +28,13 @@ export default async function walkMiddleware(dirpath = './middleware'): Promise<
     }
 
     const filenameLowercased = dirent.name.toLowerCase()
+
+    if (filenameLowercased === 'index.js') {
+      const indexModule = await import(path.resolve(path.join(dirpath, './' + dirent.name)))
+      result.enabled = indexModule.default
+      continue
+    }
+
     if (filenameLowercased.slice(-3) !== '.js' || filenameLowercased.slice(0, 1) === '.') {
       continue
     }
@@ -35,7 +42,6 @@ export default async function walkMiddleware(dirpath = './middleware'): Promise<
     const fileModule = await import(path.resolve(path.join(dirpath, './' + dirent.name)))
     const middlewareName = path.basename(dirent.name, path.extname(dirent.name))
     result.functions[middlewareName] = fileModule.default
-    result.enabled[middlewareName] = fileModule.enaled ?? false
   }
 
   return result
