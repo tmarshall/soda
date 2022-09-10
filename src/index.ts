@@ -3,6 +3,7 @@ import { program } from 'commander'
 
 import serve from './serve'
 import walkRoutes from './walkRoutes'
+import walkMiddleware from './walkMiddleware'
 
 export interface SodaRequest extends IncomingMessage {
   params: Record<string, string | number>
@@ -10,17 +11,17 @@ export interface SodaRequest extends IncomingMessage {
 
 if (require.main === module) {
   program
-    .command('serve [directory]')
+    .command('serve [routes_directory] [middleware_directory]')
     .description('serve a directory of routes')
-    .action(async (...args) => {
-      await serve(...args)
+    .action(async (routes = './routes', middleware = './middleware') => {
+      await serve(routes, middleware)
     })
 
   program
     .command('walk [directory]')
-    .description('walk a directory of routes, and print the results')
-    .action(async (...args) => {
-      const results = await walkRoutes(...args)
+    .description('walk a directory of middleware, and print the results')
+    .action(async (dirpath = './middleware') => {
+      const results = await walkMiddleware(dirpath)
       console.log(results)
     })
 
