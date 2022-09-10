@@ -11,17 +11,17 @@ export interface SodaRequest extends IncomingMessage {
 
 if (require.main === module) {
   program
-    .command('serve [routes directory] [middleware directory]')
+    .command('serve [routes_directory] [middleware_directory]')
     .description('serve a directory of routes')
-    .action(async (...args: string[]) => {
-      await serve(...args)
+    .action(async (routes = './routes', middleware = './middleware') => {
+      await serve(routes, middleware)
     })
 
   program
     .command('walk [directory]')
     .description('walk a directory of middleware, and print the results')
-    .action(async (...args: string[]) => {
-      const results = await walkMiddleware(...args)
+    .action(async (dirpath = './middleware') => {
+      const results = await walkMiddleware(dirpath)
       console.log(results)
     })
 

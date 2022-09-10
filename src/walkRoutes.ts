@@ -110,7 +110,7 @@ async function walkDirectory({
 
     if (filenameLowercased === '.middleware.js') {
       const middlewareMutatorPath = path.resolve(path.join(currentDirPath, './' + dirent.name))
-      const middlewareMutator = (await import(middlewareMutatorPath)).deafult
+      const middlewareMutator = (await import(middlewareMutatorPath)).default
       currentMiddlewareEnabled = middlewareMutator([...currentMiddlewareEnabled])
       currentMiddleware = rebuildCurrentMiddleware(currentMiddlewareEnabled)
       continue
@@ -234,13 +234,25 @@ function prepareRoutePath({
 }): RouteDefinition {
   const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
 
+  let preparedFunc: Function
+  if (!currentMiddleware.length) {
+    preparedFunc = func
+  } else {
+    preparedFunc = (...args: unknown[]) => {
+      for (let middleware of currentMiddleware) {
+        middleware(...args)
+      }
+      func(...args)
+    }
+  }
+
   if (!pathParamCheck.test(routePath)) {
     return {
       type: 'plain',
       verb,
       path: routePath,
       paramMutators: {},
-      func,
+      func: preparedFunc,
     }
   }
 
@@ -263,18 +275,6 @@ function prepareRoutePath({
     mutators[paramName] = paramAttributes.mutator
   }
   resultRegExpString = resultRegExpString + '$'
-
-  let preparedFunc: Function
-  if (!currentMiddleware.length) {
-    preparedFunc = func
-  } else {
-    preparedFunc = (...args: unknown[]) => {
-      for (let middleware of currentMiddleware) {
-        middleware(...args)
-      }
-      func(...args)
-    }
-  }
   
   return {
     type: 'params',
