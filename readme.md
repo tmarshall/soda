@@ -165,9 +165,33 @@ Basic HTTP serving is also supported from NPM scripts.
 }
 ```
 
+### Route params in the simple HTTP server
+
+All params are added to the request object, as `.params`.
+
+When using the `serve` functionality, you can cast params to either `string` or `number`. By default all params come through as a `string`.
+
+```
+routes
+└── index.js
+    ├── accounts
+    │   ├── index.js
+    │   └── [number:accountId].js
+    └── summary.js
+```
+
+```js
+// routes/accounts/[number:accountId].js
+module.exports.get = (req, res) => {
+  const accountId = req.params.accountId
+  res.writeHead(200, { 'Content-Type': 'application/json' })
+  res.end(`{ success: true, accountId: ${accountId} }`)
+}
+```
+
 ## Express middleware
 
-Want to use Express? No problem.
+Want to use [Express](https://expressjs.com/)? No problem.
 
 ```js
 const express = require('express')
@@ -185,3 +209,6 @@ async function startup() {
 startup()
 ```
 
+### Routes in Express
+
+Any route filepath like `routes/accounts/[accountId].js` will get converted to an Express route path like `/routes/accounts/:accountId`.
