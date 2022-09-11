@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-import type { DefineRoute, MutatorCollection, RouteDefinition, RouteVerbKey } from './walkRoutes'
+import type { DefineRoute, MutatorCollection, RouteVerbKey } from './walkRoutes'
 import type { SodaRequest } from '.'
 
 import { env } from 'node:process'
@@ -10,6 +10,25 @@ import walkRoutes, { ParamTypes, RouteVerb } from './walkRoutes'
 import walkMiddleware from './walkMiddleware'
 
 const port = env.SODA_PORT || 4000
+
+interface RouteDefinitionBase {
+  verb: RouteVerbKey,
+  func: Function
+}
+interface RouteDefinitionPlain {
+  type: 'plain',
+  path: string,
+  paramMutators: {},
+}
+interface RouteDefinitionParams {
+  type: 'withParams',
+  path: RegExp,
+  paramMutators: MutatorCollection,
+}
+
+type RouteDefinition = RouteDefinitionBase & (
+  RouteDefinitionPlain | RouteDefinitionParams
+)
 
 const typedParamChoices = Object.keys(ParamTypes).join('|')
 
@@ -28,7 +47,7 @@ function escapeRegex(input: string): string {
   return input.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
-const defineRoute: DefineRoute = ({ verb, routePath, func }) => {
+const defineRoute: DefineRoute<RouteDefinition> = ({ verb, routePath, func }) => {
   const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
 
   if (!pathParamCheck.test(routePath)) {
@@ -63,7 +82,7 @@ const defineRoute: DefineRoute = ({ verb, routePath, func }) => {
   resultRegExpString = resultRegExpString + '$'
   
   return {
-    type: 'params',
+    type: 'withParams',
     verb,
     path: new RegExp(resultRegExpString),
     rawPath: routePath,
@@ -74,7 +93,7 @@ const defineRoute: DefineRoute = ({ verb, routePath, func }) => {
 
 export default async function(routesDirpath?: string, middlewareDirpath?: string) {
   const middleware = await walkMiddleware(middlewareDirpath)
-  const routes = await walkRoutes(routesDirpath, middleware, { defineRoute })
+  const routes = await walkRoutes<RouteDefinition>(routesDirpath, middleware, defineRoute)
 
   const [initialPlainRoutes, initialParamRoutes] = Object.keys(RouteVerb).reduce((
     [plainRoutes, paramRoutes]: [
@@ -113,7 +132,7 @@ export default async function(routesDirpath?: string, middlewareDirpath?: string
     }
 
     for (let routeDef of (paramRoutes[verbMethod] ?? [])) {
-      if (routeDef.type !== 'params') {
+      if (routeDef.type !== 'withParams') {
         continue
       }
         

@@ -23,53 +23,18 @@ const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
 
 export type MutatorCollection = Record<string, (paramString: string) => string | number>
 
-interface RouteDefinitionBase {
-  verb: RouteVerbKey
-  func: Function
-  rawPath: string
-}
-interface RouteDefinitionPlain {
-  type: 'plain'
-  path: string
-  paramMutators: {}
-}
-interface RouteDefinitionParams {
-  type: 'params'
-  path: RegExp
-  paramMutators: MutatorCollection
-}
-
-export type RouteDefinition = RouteDefinitionBase & (
-  RouteDefinitionPlain | RouteDefinitionParams
-)
-
 interface DefineRouteArgs {
   verb: RouteVerbKey
   routePath: string
   func: Function
 }
 
-export type DefineRoute = (args: DefineRouteArgs) => RouteDefinition
+export type DefineRoute<RouteDefinition> = (args: DefineRouteArgs) => RouteDefinition
 
-const defaultDefineRoute: DefineRoute = ({ verb, routePath, func }) => ({
-  type: 'plain',
-  verb,
-  path: routePath,
-  rawPath: routePath,
-  paramMutators: {},
-  func,
-})
-
-interface WalkRoutesOptions {
-  defineRoute: DefineRoute
-}
-
-export default async function walkRoutes(
+export default async function walkRoutes<RouteDefinition>(
   dirpath = './routes',
   middleware: MiddlewareDefinition,
-  options: WalkRoutesOptions = {
-    defineRoute: defaultDefineRoute
-  }
+  defineRoute: DefineRoute<RouteDefinition>,
 ) {
   // reading in the base dir, and kicking of a recursive walk
   const baseDir = await readdir(dirpath, { withFileTypes: true })
@@ -77,14 +42,14 @@ export default async function walkRoutes(
   const currentMiddlewareEnabled = [...middleware.enabled]
   const currentMiddleware = rebuildCurrentMiddleware(currentMiddlewareEnabled)
 
-  return await walkDirectory({
+  return await walkDirectory<RouteDefinition>({
     currentDir: baseDir,
     currentDirPath: dirpath,
     baseDirPath: dirpath,
     currentMiddlewareEnabled,
     currentMiddleware: currentMiddleware,
     rebuildCurrentMiddleware,
-    walkOptions: options,
+    defineRoute,
   })
 }
 
@@ -100,14 +65,14 @@ function buildMiddlewareArray(allMiddlewareFunctions: Record<string, Function>, 
 
 type RebuildCurrentMiddleware = (enabled: string[]) => Function[]
 
-async function walkDirectory({
+async function walkDirectory<RouteDefinition>({
   currentDir,
   currentDirPath,
   baseDirPath,
   currentMiddlewareEnabled,
   currentMiddleware,
   rebuildCurrentMiddleware,
-  walkOptions,
+  defineRoute,
 }: {
   currentDir: Dirent[],
   currentDirPath: string,
@@ -115,7 +80,7 @@ async function walkDirectory({
   currentMiddlewareEnabled: string[],
   currentMiddleware: Function[],
   rebuildCurrentMiddleware: RebuildCurrentMiddleware,
-  walkOptions: WalkRoutesOptions,
+  defineRoute: DefineRoute<RouteDefinition>,
 }): Promise<RouteDefinition[]> {
   const pendingSubdirs: [string, Promise<Dirent[]>][] = []
   const pendingHandlers: Promise<RouteDefinition[]>[] = []
@@ -157,14 +122,14 @@ async function walkDirectory({
   }
 
   pendingHandlers.push(...acceptedFilepaths.map((filepath: string) => {
-    return getRoutesFromFile({
+    return getRoutesFromFile<RouteDefinition>({
       fileName: path.basename(filepath),
       filepath,
       baseDirPath,
       currentMiddlewareEnabled,
       currentMiddleware,
       rebuildCurrentMiddleware,
-      walkOptions,
+      defineRoute,
     })
   }))
 
@@ -173,14 +138,14 @@ async function walkDirectory({
   for (let i = 0; i < pendingSubdirs.length; i++) {
     const [subdirPath, subdirRead] = pendingSubdirs[i]
     const subdir = await subdirRead
-    pendingSubWalks.push(walkDirectory({
+    pendingSubWalks.push(walkDirectory<RouteDefinition>({
       currentDir: subdir,
       currentDirPath: subdirPath,
       baseDirPath,
       currentMiddlewareEnabled,
       currentMiddleware,
       rebuildCurrentMiddleware,
-      walkOptions,
+      defineRoute,
     }))
   }
 
@@ -197,14 +162,14 @@ async function walkDirectory({
   }, [])
 }
 
-async function getRoutesFromFile({
+async function getRoutesFromFile<RouteDefinition>({
   fileName,
   filepath,
   baseDirPath,
   currentMiddleware,
   currentMiddlewareEnabled,
   rebuildCurrentMiddleware,
-  walkOptions,
+  defineRoute,
 }: {
   fileName: string,
   filepath: string,
@@ -212,7 +177,7 @@ async function getRoutesFromFile({
   currentMiddlewareEnabled: string[],
   currentMiddleware: Function[],
   rebuildCurrentMiddleware: RebuildCurrentMiddleware,
-  walkOptions: WalkRoutesOptions,
+  defineRoute: DefineRoute<RouteDefinition>,
 }) {
   const handlers: RouteDefinition[] = []
 
@@ -233,14 +198,14 @@ async function getRoutesFromFile({
   for (let verbKey of routeVerbExports) {
     const verbKeyValue = RouteVerb[verbKey]
     if (verbKeyValue in fileModule) {
-      handlers.push(prepareRoutePath({
+      handlers.push(prepareRoutePath<RouteDefinition>({
         verb: verbKey,
         routePath,
         func: fileModule[verbKeyValue],
         currentMiddleware,
         currentMiddlewareEnabled,
         rebuildCurrentMiddleware,
-        defineRoute: walkOptions.defineRoute ?? defaultDefineRoute
+        defineRoute,
       }))
     }
   }
@@ -260,7 +225,7 @@ interface SodaRouteHandler extends Function {
 // routes like `/users/me` will return the plain strings
 // routes like `/users/[id]` will return a regex, to match `[id]`
 // routes like `/users/[number:id]` will return a regex, to match typed params
-function prepareRoutePath({
+function prepareRoutePath<RouteDefinition>({
   verb,
   routePath,
   func,
@@ -275,7 +240,7 @@ function prepareRoutePath({
   currentMiddleware: Function[],
   currentMiddlewareEnabled: string[],
   rebuildCurrentMiddleware: RebuildCurrentMiddleware,
-  defineRoute: DefineRoute,
+  defineRoute: DefineRoute<RouteDefinition>,
 }): RouteDefinition {
   if (func.middleware) {
     const middlewareMutator = func.middleware
