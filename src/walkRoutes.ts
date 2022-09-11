@@ -21,7 +21,7 @@ export type RouteVerbKey = keyof typeof RouteVerb
 
 const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
 
-type MutatorCollection = Record<string, (paramString: string) => string | number>
+export type MutatorCollection = Record<string, (paramString: string) => string | number>
 
 interface RouteDefinitionBase {
   verb: RouteVerbKey
@@ -43,7 +43,34 @@ export type RouteDefinition = RouteDefinitionBase & (
   RouteDefinitionPlain | RouteDefinitionParams
 )
 
-export default async function walkRoutes(dirpath = './routes', middleware: MiddlewareDefinition) {
+interface DefineRouteArgs {
+  verb: RouteVerbKey
+  routePath: string
+  func: Function
+}
+
+export type DefineRoute = (args: DefineRouteArgs) => RouteDefinition
+
+const defaultDefineRoute: DefineRoute = ({ verb, routePath, func }) => ({
+  type: 'plain',
+  verb,
+  path: routePath,
+  rawPath: routePath,
+  paramMutators: {},
+  func,
+})
+
+interface WalkRoutesOptions {
+  defineRoute: DefineRoute
+}
+
+export default async function walkRoutes(
+  dirpath = './routes',
+  middleware: MiddlewareDefinition,
+  options: WalkRoutesOptions = {
+    defineRoute: defaultDefineRoute
+  }
+) {
   // reading in the base dir, and kicking of a recursive walk
   const baseDir = await readdir(dirpath, { withFileTypes: true })
   const rebuildCurrentMiddleware = (enabled: string[]) => buildMiddlewareArray(middleware.functions, enabled)
@@ -57,6 +84,7 @@ export default async function walkRoutes(dirpath = './routes', middleware: Middl
     currentMiddlewareEnabled,
     currentMiddleware: currentMiddleware,
     rebuildCurrentMiddleware,
+    walkOptions: options,
   })
 }
 
@@ -79,6 +107,7 @@ async function walkDirectory({
   currentMiddlewareEnabled,
   currentMiddleware,
   rebuildCurrentMiddleware,
+  walkOptions,
 }: {
   currentDir: Dirent[],
   currentDirPath: string,
@@ -86,6 +115,7 @@ async function walkDirectory({
   currentMiddlewareEnabled: string[],
   currentMiddleware: Function[],
   rebuildCurrentMiddleware: RebuildCurrentMiddleware,
+  walkOptions: WalkRoutesOptions,
 }): Promise<RouteDefinition[]> {
   const pendingSubdirs: [string, Promise<Dirent[]>][] = []
   const pendingHandlers: Promise<RouteDefinition[]>[] = []
@@ -134,6 +164,7 @@ async function walkDirectory({
       currentMiddlewareEnabled,
       currentMiddleware,
       rebuildCurrentMiddleware,
+      walkOptions,
     })
   }))
 
@@ -149,6 +180,7 @@ async function walkDirectory({
       currentMiddlewareEnabled,
       currentMiddleware,
       rebuildCurrentMiddleware,
+      walkOptions,
     }))
   }
 
@@ -171,7 +203,8 @@ async function getRoutesFromFile({
   baseDirPath,
   currentMiddleware,
   currentMiddlewareEnabled,
-  rebuildCurrentMiddleware
+  rebuildCurrentMiddleware,
+  walkOptions,
 }: {
   fileName: string,
   filepath: string,
@@ -179,6 +212,7 @@ async function getRoutesFromFile({
   currentMiddlewareEnabled: string[],
   currentMiddleware: Function[],
   rebuildCurrentMiddleware: RebuildCurrentMiddleware,
+  walkOptions: WalkRoutesOptions,
 }) {
   const handlers: RouteDefinition[] = []
 
@@ -206,6 +240,7 @@ async function getRoutesFromFile({
         currentMiddleware,
         currentMiddlewareEnabled,
         rebuildCurrentMiddleware,
+        defineRoute: walkOptions.defineRoute ?? defaultDefineRoute
       }))
     }
   }
@@ -213,25 +248,9 @@ async function getRoutesFromFile({
   return handlers
 }
 
-enum ParamTypes {
+export enum ParamTypes {
   string,
   number
-}
-const typedParamAttributes = {
-  [ParamTypes.string]: {
-    regExpStr: (paramName: string) => `/(?<${paramName}>[^/]+)`,
-    mutator: (paramString: string) => paramString,
-  },
-  [ParamTypes.number]: {
-    regExpStr: (paramName: string) => `/(?<${paramName}>\\d+(?:\\.\\d+)?)`,
-    mutator: (paramString: string) => Number(paramString)
-  },
-}
-const typedParamChoices = Object.keys(ParamTypes).join('|')
-
-
-function escapeRegex(input: string): string {
-  return input.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
 interface SodaRouteHandler extends Function {
@@ -247,7 +266,8 @@ function prepareRoutePath({
   func,
   currentMiddleware,
   currentMiddlewareEnabled,
-  rebuildCurrentMiddleware
+  rebuildCurrentMiddleware,
+  defineRoute,
 }: {
   verb: RouteVerbKey,
   routePath: string,
@@ -255,9 +275,8 @@ function prepareRoutePath({
   currentMiddleware: Function[],
   currentMiddlewareEnabled: string[],
   rebuildCurrentMiddleware: RebuildCurrentMiddleware,
+  defineRoute: DefineRoute,
 }): RouteDefinition {
-  const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
-
   if (func.middleware) {
     const middlewareMutator = func.middleware
     currentMiddleware = rebuildCurrentMiddleware(middlewareMutator([...currentMiddlewareEnabled]))
@@ -275,43 +294,9 @@ function prepareRoutePath({
     preparedFunc = func
   }
 
-  if (!pathParamCheck.test(routePath)) {
-    return {
-      type: 'plain',
-      verb,
-      path: routePath,
-      rawPath: routePath,
-      paramMutators: {},
-      func: preparedFunc,
-    }
-  }
-
-  const mutators: MutatorCollection = {}
-  const parts = routePath.split(pathParamCheck)
-  let resultRegExpString = '^'
-
-  for (let i = 0; i < parts.length; i++) {
-    if (i % 3 === 0) {
-      resultRegExpString += escapeRegex(parts[i])
-      continue
-    }
-
-    const paramType = (parts[i] || 'string') as keyof typeof ParamTypes
-    const paramName = parts[i + 1]
-    i = i + 1
-
-    const paramAttributes = typedParamAttributes[ParamTypes[paramType]]
-    resultRegExpString += paramAttributes.regExpStr(paramName)
-    mutators[paramName] = paramAttributes.mutator
-  }
-  resultRegExpString = resultRegExpString + '$'
-  
-  return {
-    type: 'params',
+  return defineRoute({
     verb,
-    path: new RegExp(resultRegExpString),
-    rawPath: routePath,
-    paramMutators: mutators,
-    func: preparedFunc,
-  }
+    routePath,
+    func: preparedFunc
+  })
 }
