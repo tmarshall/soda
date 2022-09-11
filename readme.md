@@ -4,13 +4,13 @@ Routes as a directory.
 
 ## What is it?
 
-The idea behind Soda is that the API path should mirror the file path.
+The idea behind Soda is that API paths should mirror their file path.
 
 An exported `get` method in `/routes/users.js` would become `GET /users/`
 
 ## Structuring routes
 
-Let's say you have the following routes directory, and for the same of example, let's say every file exports a `get` handler.
+Let's say you have the following routes directory, and for the sake of example, let's say every file exports a `get` handler.
 
 ```
 routes
@@ -21,7 +21,7 @@ routes
     └── summary.js
 ```
 
-Soda will translate these routes into endpoint paths:
+Soda will translate these routes into these endpoint paths:
 
 ```
 GET /
