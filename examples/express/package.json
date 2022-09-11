@@ -8,8 +8,9 @@
   },
   "author": "",
   "license": "MIT",
+  "repository": "tmarshall/soda",
   "dependencies": {
     "express": "^4.18.1",
-    "soda": "file:../../dist/src"
+    "soda": "latest"
   }
 }

@@ -50,15 +50,16 @@ const defineRoute: DefineRoute<RouteDefinition> = ({ verb, routePath, func }) =>
 }
 
 export default async function withExpress(routesDirpath?: string, middlewareDirpath?: string) {
-  const express = import('express')
+  const Router = require('express').Router
+
   const middleware = await walkMiddleware(middlewareDirpath)
   const routes = await walkRoutes<RouteDefinition>(routesDirpath, middleware, defineRoute)
 
-  const expressRouter = (await express).Router()
+  const expressRouter = Router()
 
   for (let routeDef of routes) {
-    expressRouter[routeDef.verb](routeDef.path, (...args) => {
-      return routeDef.func(...args)
-    })
+    expressRouter[routeDef.verb](routeDef.path, routeDef.func)
   }
+
+  return expressRouter
 }
