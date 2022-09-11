@@ -24,18 +24,19 @@ const routeVerbExports = Object.keys(RouteVerb) as RouteVerbKey[]
 type MutatorCollection = Record<string, (paramString: string) => string | number>
 
 interface RouteDefinitionBase {
-  verb: RouteVerbKey,
+  verb: RouteVerbKey
   func: Function
+  rawPath: string
 }
 interface RouteDefinitionPlain {
-  type: 'plain',
-  path: string,
-  paramMutators: {},
+  type: 'plain'
+  path: string
+  paramMutators: {}
 }
 interface RouteDefinitionParams {
-  type: 'params',
-  path: RegExp,
-  paramMutators: MutatorCollection,
+  type: 'params'
+  path: RegExp
+  paramMutators: MutatorCollection
 }
 
 export type RouteDefinition = RouteDefinitionBase & (
@@ -279,6 +280,7 @@ function prepareRoutePath({
       type: 'plain',
       verb,
       path: routePath,
+      rawPath: routePath,
       paramMutators: {},
       func: preparedFunc,
     }
@@ -308,6 +310,7 @@ function prepareRoutePath({
     type: 'params',
     verb,
     path: new RegExp(resultRegExpString),
+    rawPath: routePath,
     paramMutators: mutators,
     func: preparedFunc,
   }
