@@ -78,6 +78,16 @@ By default this will walk routes in `./routes`, and middleware in `./middleware`
 serve('./src/routes', './src/middleware')
 ```
 
+Basic HTTP serving is also supported from NPM scripts.
+
+```json
+{
+  "scripts": {
+    "serve": "soda serve ./routes"
+  }
+}
+```
+
 ## Express middleware
 
 Want to use Express? No problem.
