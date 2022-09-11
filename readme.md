@@ -65,7 +65,7 @@ module.exports.connect = (req, res) => {}
 
 ## Middleware
 
-It's common to have middleware, like methods to check that the user is logged in. With Soda all middleware handlers are defined in a dedicated middleare directory. Every middleware handler is required to be in its own file, and no sub-directories are supported.
+It's common to have middleware, like methods to check that the user is logged in. With Soda all middleware handlers are defined in a dedicated middleware directory. Every middleware handler is required to be in its own file, and no sub-directories are supported.
 
 ```
 middleware
@@ -110,7 +110,7 @@ routes
 
 ```js
 // routes/brands/.middleware.js
-module.exports = (currentMiddleare) => []
+module.exports = (currentMiddleware) => []
 ```
 
 In this example the endpoints within `/brands/` no longer have any middleware applied, since the file returned an empty array. This applies to any sub-directories.
@@ -125,7 +125,7 @@ If you want to set the middleware for all of the routes in a file, you can do so
 // routes/overview.js
 
 module.exports.get = (req, res) => {}
-module.exports.middleware = (currentMiddleare) => [...currentMiddleare, 'userIsAdmin']
+module.exports.middleware = (currentMiddleware) => [...currentMiddleware, 'userIsAdmin']
 ```
 
 Or, if you want it scoped to a specific route, that can be done too:
@@ -135,7 +135,7 @@ Or, if you want it scoped to a specific route, that can be done too:
 
 module.exports.get = (req, res) => {}
 
-module.exports.get.middleware = (currentMiddleare) => [...currentMiddleare, 'userIsAdmin']
+module.exports.get.middleware = (currentMiddleware) => [...currentMiddleware, 'userIsAdmin']
 ```
 
 <sub>Note that neither of these in-route approaches affect sub-directories.</sub>
