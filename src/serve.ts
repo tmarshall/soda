@@ -12,22 +12,21 @@ import walkMiddleware from './walkMiddleware'
 const port = env.SODA_PORT || 4000
 
 interface RouteDefinitionBase {
-  verb: RouteVerbKey,
+  verb: RouteVerbKey
   func: Function
 }
 interface RouteDefinitionPlain {
-  type: 'plain',
-  path: string,
-  paramMutators: {},
+  type: 'plain'
+  path: string
+  paramMutators: {}
 }
-interface RouteDefinitionParams {
-  type: 'withParams',
-  path: RegExp,
-  paramMutators: MutatorCollection,
+interface RouteDefinitionWithParams {
+  type: 'withParams'
+  path: RegExp
+  paramMutators: MutatorCollection
 }
-
 type RouteDefinition = RouteDefinitionBase & (
-  RouteDefinitionPlain | RouteDefinitionParams
+  RouteDefinitionPlain | RouteDefinitionWithParams
 )
 
 const typedParamChoices = Object.keys(ParamTypes).join('|')
@@ -55,7 +54,6 @@ const defineRoute: DefineRoute<RouteDefinition> = ({ verb, routePath, func }) =>
       type: 'plain',
       verb,
       path: routePath,
-      rawPath: routePath,
       paramMutators: {},
       func,
     }
@@ -85,7 +83,6 @@ const defineRoute: DefineRoute<RouteDefinition> = ({ verb, routePath, func }) =>
     type: 'withParams',
     verb,
     path: new RegExp(resultRegExpString),
-    rawPath: routePath,
     paramMutators: mutators,
     func,
   }
