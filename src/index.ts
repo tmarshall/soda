@@ -1,9 +1,11 @@
 import type { IncomingMessage } from 'node:http'
+
 import { program } from 'commander'
 
 import serve from './serve'
 import walkRoutes from './walkRoutes'
 import walkMiddleware from './walkMiddleware'
+import withExpress from './withExpress'
 
 export interface SodaRequest extends IncomingMessage {
   params: Record<string, string | number>
@@ -31,4 +33,5 @@ if (require.main === module) {
 module.exports = {
   serve,
   walkRoutes,
+  withExpress,
 }

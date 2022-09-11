@@ -1,18 +1,96 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import type { RouteDefinition, RouteVerbKey } from './walkRoutes'
+
+import type { DefineRoute, MutatorCollection, RouteVerbKey } from './walkRoutes'
 import type { SodaRequest } from '.'
 
 import { env } from 'node:process'
 import { createServer } from 'node:http'
 
-import walkRoutes, { RouteVerb } from './walkRoutes'
+import walkRoutes, { ParamTypes, RouteVerb } from './walkRoutes'
 import walkMiddleware from './walkMiddleware'
 
 const port = env.SODA_PORT || 4000
 
+interface RouteDefinitionBase {
+  verb: RouteVerbKey
+  func: Function
+}
+interface RouteDefinitionPlain {
+  type: 'plain'
+  path: string
+  paramMutators: {}
+}
+interface RouteDefinitionWithParams {
+  type: 'withParams'
+  path: RegExp
+  paramMutators: MutatorCollection
+}
+type RouteDefinition = RouteDefinitionBase & (
+  RouteDefinitionPlain | RouteDefinitionWithParams
+)
+
+const typedParamChoices = Object.keys(ParamTypes).join('|')
+
+const typedParamAttributes = {
+  [ParamTypes.string]: {
+    regExpStr: (paramName: string) => `/(?<${paramName}>[^/]+)`,
+    mutator: (paramString: string) => paramString,
+  },
+  [ParamTypes.number]: {
+    regExpStr: (paramName: string) => `/(?<${paramName}>\\d+(?:\\.\\d+)?)`,
+    mutator: (paramString: string) => Number(paramString)
+  },
+}
+
+function escapeRegex(input: string): string {
+  return input.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
+const defineRoute: DefineRoute<RouteDefinition> = ({ verb, routePath, func }) => {
+  const pathParamCheck = new RegExp(`/\\[(?:(?<paramType>${typedParamChoices})\\:)?(?<paramName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\](?=/|$)`, 'g')
+
+  if (!pathParamCheck.test(routePath)) {
+    return {
+      type: 'plain',
+      verb,
+      path: routePath,
+      paramMutators: {},
+      func,
+    }
+  }
+
+  const mutators: MutatorCollection = {}
+  const parts = routePath.split(pathParamCheck)
+  let resultRegExpString = '^'
+
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 3 === 0) {
+      resultRegExpString += escapeRegex(parts[i])
+      continue
+    }
+
+    const paramType = (parts[i] || 'string') as keyof typeof ParamTypes
+    const paramName = parts[i + 1]
+    i = i + 1
+
+    const paramAttributes = typedParamAttributes[ParamTypes[paramType]]
+    resultRegExpString += paramAttributes.regExpStr(paramName)
+    mutators[paramName] = paramAttributes.mutator
+  }
+  resultRegExpString = resultRegExpString + '$'
+  
+  return {
+    type: 'withParams',
+    verb,
+    path: new RegExp(resultRegExpString),
+    paramMutators: mutators,
+    func,
+  }
+}
+
 export default async function(routesDirpath?: string, middlewareDirpath?: string) {
   const middleware = await walkMiddleware(middlewareDirpath)
-  const routes = await walkRoutes(routesDirpath, middleware)
+  const routes = await walkRoutes<RouteDefinition>(routesDirpath, middleware, defineRoute)
 
   const [initialPlainRoutes, initialParamRoutes] = Object.keys(RouteVerb).reduce((
     [plainRoutes, paramRoutes]: [
@@ -50,9 +128,8 @@ export default async function(routesDirpath?: string, middlewareDirpath?: string
       return plainRoutes[verbMethod][req.url].func(sodaReq, res)
     }
 
-    
     for (let routeDef of (paramRoutes[verbMethod] ?? [])) {
-      if (routeDef.type !== 'params') {
+      if (routeDef.type !== 'withParams') {
         continue
       }
         
