@@ -13,7 +13,7 @@ An exported `get` method in `/routes/users.js` would become `GET /users/`
 Let's say you have the following routes directory, and for the same of example, let's say every file exports a `get` handler.
 
 ```
-.
+routes
 └── index.js
     ├── accounts
     │   ├── index.js
@@ -62,6 +62,83 @@ module.exports.options = (req, res) => {}
 module.exports.trace = (req, res) => {}
 module.exports.connect = (req, res) => {}
 ```
+
+## Middleware
+
+It's common to have middleware, like methods to check that the user is logged in. With Soda all middleware handlers are defined in a dedicated middleare directory. Every middleware handler is required to be in its own file, and no sub-directories are supported.
+
+```
+middleware
+├── index.js
+├── userAuthed.js
+└── userIsAdmin.js
+```
+
+In this example we now have two middleware handlers; `'userAuthed'` and `'userIsAdmin'`.
+
+The contents of each are similar to route files.
+
+```js
+// middleware/userAuthed.js
+module.exports = (req, res) => {
+  // valide user is authed
+}
+```
+
+The `index.js` file is optional. It is used to define what middleware is enabled by default, for all routes. It exports an array of middleware names, which will be applied, in the order provided. If this file is not provided, then all middleware is assumed to be disabled.
+
+```js
+// middleware/index.js
+module.exports = ['userAuthed']
+```
+
+This tells us that the `'userAuthed'` is enabled by default, while `'userIsAdmin'` is not, since it is omitted.
+
+Middleware can be toggled within specific route directories, as well. This is done by providing a `.middleware.js` file.
+
+```
+routes
+└── index.js
+    ├── inventory
+    │   ├── index.js
+    │   └── [itemId].js
+    ├── brands
+    │   ├── .middleware.js
+    │   └── index.js
+    └── overview.js
+```
+
+```js
+// routes/brands/.middleware.js
+module.exports = (currentMiddleare) => []
+```
+
+In this example the endpoints within `/brands/` no longer have any middleware applied, since the file returned an empty array. This applies to any sub-directories.
+
+Note that these methods recieve the current list of middleware enabled.
+
+Now let's say we want the endpoints within `/overview/` to be for admin users only. You can define the enabled middleware two ways within a route file.
+
+If you want to set the middleware for all of the routes in a file, you can do so by exporting `middleware`:
+
+```js
+// routes/overview.js
+
+module.exports.get = (req, res) => {}
+module.exports.middleware = (currentMiddleare) => [...currentMiddleare, 'userIsAdmin']
+```
+
+Or, if you want it scoped to a specific route, that can be done too:
+
+```js
+// routes/overview.js
+
+module.exports.get = (req, res) => {}
+
+module.exports.get.middleware = (currentMiddleare) => [...currentMiddleare, 'userIsAdmin']
+```
+
+Note that neither of these in-route approaches affect sub-directories.
 
 ## Simple HTTP server
 
