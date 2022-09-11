@@ -36,7 +36,7 @@ URL paramaters are defined by `[ ]` square brackets.
 
 Named files will add to the endpoint path. For example, `/summary.js` will add routes for the endpoint `/summary/`.
 
-<aside>If you have both `/accounts.js` and `/accounts/index.js`, the `index.js` method will supersede those in `accounts.js`.</aside>
+<sub>If you have both `/accounts.js` and `/accounts/index.js`, the `index.js` method will supersede those in `accounts.js`.</sub>
 
 ## Route files
 
@@ -50,7 +50,7 @@ module.exports.get = (req, res) => {
 
 All HTTP verbs are supported. A single file can export muliple.
 
-<aside>`DELETE` requests are exported as `del` since `delete` is a reserved word.</aside>
+<sub>`DELETE` requests are exported as `del` since `delete` is a reserved word.</sub>
 
 ```js
 module.exports.get = (req, res) => {}
@@ -115,7 +115,7 @@ module.exports = (currentMiddleare) => []
 
 In this example the endpoints within `/brands/` no longer have any middleware applied, since the file returned an empty array. This applies to any sub-directories.
 
-Note that these methods recieve the current list of middleware enabled.
+<sub>Note that these methods recieve the current list of middleware enabled.</sub>
 
 Now let's say we want the endpoints within `/overview/` to be for admin users only. You can define the enabled middleware two ways within a route file.
 
@@ -138,7 +138,7 @@ module.exports.get = (req, res) => {}
 module.exports.get.middleware = (currentMiddleare) => [...currentMiddleare, 'userIsAdmin']
 ```
 
-Note that neither of these in-route approaches affect sub-directories.
+<sub>Note that neither of these in-route approaches affect sub-directories.</sub>
 
 ## Simple HTTP server
 
