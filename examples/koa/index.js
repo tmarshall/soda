@@ -1,15 +1,12 @@
 const Koa = require('koa')
-const Router = require('@koa/router')
+const soda = require('soda')
 const app = new Koa()
-const router = new Router()
 
-router.get('/', (ctx, next) => {
-  ctx.body = 'this should render'
-})
+async function startup() {
+  app.use(await soda.withKoaRouter('./routes'))
 
-app
-  .use(router.routes())
-  .use(router.allowedMethods())
-  .listen(5555)
+  app.listen(5555)
+  console.log('Server listening on :5555')
+}
+startup()
 
-console.log('Server listening on :5555')
