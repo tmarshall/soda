@@ -183,7 +183,7 @@ routes
 ```js
 // routes/accounts/[number:accountId].js
 module.exports.get = (req, res) => {
-  const accountId = ctx.params.accountId
+  const accountId = req.params.accountId
   res.writeHead(200, { 'Content-Type': 'application/json' })
   res.end(`{ success: true, accountId: ${accountId} }`)
 }

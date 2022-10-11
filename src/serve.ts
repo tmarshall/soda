@@ -144,7 +144,7 @@ export default async function(routesDirpath?: string, middlewareDirpath?: string
           params[key] = routeDef.paramMutators[key](match.groups![key])
         }
       }
-      sodactx.params = params
+      sodaReq.params = params
       return routeDef.func(sodaReq, res)
     }
 
