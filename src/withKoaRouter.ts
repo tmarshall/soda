@@ -40,17 +40,17 @@ const defineRoute: DefineRoute<RouteDefinition> = ({ verb, routePath, func }) =>
   }
 }
 
-export default async function withExpress(routesDirpath?: string, middlewareDirpath?: string) {
-  const Router = require('express').Router
+export default async function withKoaRouter(routesDirpath?: string, middlewareDirpath?: string) {
+  const Router = require('@koa/router')
 
   const middleware = await walkMiddleware(middlewareDirpath)
   const routes = await walkRoutes<RouteDefinition>(routesDirpath, middleware, defineRoute)
 
-  const expressRouter = Router()
+  const koaRouter = new Router()
 
   for (let routeDef of routes) {
-    expressRouter[routeDef.verb](routeDef.path, routeDef.func)
+    koaRouter[routeDef.verb](routeDef.path, routeDef.func)
   }
 
-  return expressRouter
+  return koaRouter
 }

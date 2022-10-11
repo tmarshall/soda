@@ -6,6 +6,7 @@ import serve from './serve'
 import walkRoutes from './walkRoutes'
 import walkMiddleware from './walkMiddleware'
 import withExpress from './withExpress'
+import withKoaRouter from './withKoaRouter'
 
 export interface SodaRequest extends IncomingMessage {
   params: Record<string, string | number>
@@ -34,4 +35,5 @@ module.exports = {
   serve,
   walkRoutes,
   withExpress,
+  withKoaRouter,
 }
