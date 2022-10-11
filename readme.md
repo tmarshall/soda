@@ -224,17 +224,19 @@ const app = new Koa()
 
 async function startup() {
   // `withKoaRouter` takes the same arguments as `soda.serve`
-  app.use(await soda.withKoaRouter('./routes'))
-
+  const sodaRouter = await soda.withKoaRouter('./routes')
+  app
+    .use(sodaRouter.routes())
+    .use(sodaRouter.allowedMethods())
+  
   app.listen(5555)
   console.log('Server listening on :5555')
 }
 startup()
-
 ```
 
 ### Routes in Koa
 
-`withKoaRouter` uses [the `@koa/router` package](https://www.npmjs.com/package/koa-router).
+`withKoaRouter` uses [the `@koa/router` package](https://www.npmjs.com/package/koa-router). The return value is an instance of the Koa router.
 
 Any route filepath like `routes/accounts/[accountId].js` will get converted to a Koa route path like `/routes/accounts/:accountId`.
