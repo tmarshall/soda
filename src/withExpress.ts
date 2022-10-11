@@ -1,21 +1,12 @@
 import type { DefineRoute, RouteVerbKey } from './walkRoutes'
 
-import walkRoutes, { ParamTypes } from './walkRoutes'
+import walkRoutes from './walkRoutes'
 import walkMiddleware from './walkMiddleware'
 
 interface RouteDefinition {
   verb: RouteVerbKey
   path: string
   func: Function
-}
-
-const typedParamAttributes = {
-  [ParamTypes.string]: {
-    mutator: (paramString: string) => paramString,
-  },
-  [ParamTypes.number]: {
-    mutator: (paramString: string) => Number(paramString)
-  },
 }
 
 const defineRoute: DefineRoute<RouteDefinition> = ({ verb, routePath, func }) => {
