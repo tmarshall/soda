@@ -9,4 +9,3 @@ async function startup() {
   console.log('Server listening on :5555')
 }
 startup()
-
