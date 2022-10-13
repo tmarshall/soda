@@ -4,7 +4,6 @@ import { program } from 'commander'
 
 import serve from './serve'
 import walkRoutes from './walkRoutes'
-import walkMiddleware from './walkMiddleware'
 import withExpress from './withExpress'
 import withKoaRouter from './withKoaRouter'
 
@@ -18,14 +17,6 @@ if (require.main === module) {
     .description('serve a directory of routes')
     .action(async (routes = './routes', middleware = './middleware') => {
       await serve(routes, middleware)
-    })
-
-  program
-    .command('walk [directory]')
-    .description('walk a directory of middleware, and print the results')
-    .action(async (dirpath = './middleware') => {
-      const results = await walkMiddleware(dirpath)
-      console.log(results)
     })
 
   program.parse()
