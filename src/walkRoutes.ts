@@ -114,7 +114,10 @@ async function walkDirectory<RouteDefinition>({
       continue
     }
 
-    if (filenameLowercased.slice(-3) !== '.js' || filenameLowercased.slice(0, 1) === '.') {
+    if ((
+      filenameLowercased.slice(-3) !== '.js' &&
+      filenameLowercased.slice(-3) !== '.ts'
+    ) || filenameLowercased.slice(0, 1) === '.') {
       continue
     }
 
@@ -183,7 +186,10 @@ async function getRoutesFromFile<RouteDefinition>({
 
   const fileModule = await import(path.resolve(filepath))
 
-  const routePathInner = fileName.toLowerCase() === 'index.js' ?
+  const routePathInner = (
+    fileName.toLowerCase() === 'index.js' ||
+    fileName.toLowerCase() === 'index.ts'
+  ) ?
     // `some/path` instead of `some/path/index.js`
     path.dirname(filepath) :
     // `some/path/endpoint` instead of `some/path/endpoint.js`
