@@ -169,6 +169,15 @@ Basic HTTP serving is also supported from NPM scripts.
 }
 ```
 
+### Closing the HTTP server
+
+`serve()` returns a callback, which is a passthrough to [the `node:http` `close()` method](https://nodejs.org/api/http.html#serverclosecallback).
+
+```js
+const closeServer = serve()
+closeServer()
+```
+
 ### Route params in the simple HTTP server
 
 All params are added to the request object, as `.params`.
