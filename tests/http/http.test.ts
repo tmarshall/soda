@@ -18,4 +18,11 @@ describe('http serving', () => {
     const responseData = response.data as ApiResponse
     expect(responseData.page).toBe('root')
   })
+
+  it('should not serve pages that are not routed', async () => {
+    await serve(path.join(__dirname, 'routes'))
+
+    const response = await axios.get('http://localhost:5456/nope')
+    expect(response.status).toBe(404)
+  })
 })
