@@ -29,9 +29,31 @@ describe('http serving', () => {
     expect(responseData.page).toBe('root')
   })
 
-  it('should not serve pages that are not routed', async () => {
+  it('should not serve pages that are not routed', () => {
     expect(async () => {
       await axios.get('http://localhost:5456/nope')
     }).rejects.toThrow(AxiosError)
+  })
+
+  it('should work with nested named files, which include params', async () => {
+    expect(async () => {
+      await axios.get('http://localhost:5456/magic/cosmo')
+    }).rejects.toThrow(AxiosError)
+    expect(async () => {
+      await axios.post('http://localhost:5456/magic/cosmo')
+    }).rejects.toThrow(AxiosError)
+    expect(async () => {
+      await axios.delete('http://localhost:5456/magic/cosmo')
+    }).rejects.toThrow(AxiosError)
+
+    const response = await axios.patch('http://localhost:5456/magic/cosmo')
+    expect(response.status).toBe(200)
+    const responseData = response.data as ApiResponse
+    expect(responseData.page).toBe('magic patch: cosmo')
+
+    const response2 = await axios.put('http://localhost:5456/magic/cosmo')
+    expect(response2.status).toBe(200)
+    const response2Data = response2.data as ApiResponse
+    expect(response2Data.page).toBe('magic put: cosmo')
   })
 })
