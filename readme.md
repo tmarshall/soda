@@ -63,6 +63,10 @@ module.exports.trace = (req, res) => {}
 module.exports.connect = (req, res) => {}
 ```
 
+## TypeScript
+
+Routes can be written in JavaScript or TypeScript. Routes must end in a `.js` or `.ts` extension in order be discovered by Soda.
+
 ## Middleware
 
 It's common to have middleware, like methods to check that the user is logged in. With Soda all middleware handlers are defined in a dedicated middleware directory. Every middleware handler is required to be in its own file, and no sub-directories are supported.
@@ -163,6 +167,15 @@ Basic HTTP serving is also supported from NPM scripts.
     "serve": "soda serve ./routes"
   }
 }
+```
+
+### Closing the HTTP server
+
+`serve()` returns a callback, which is a passthrough to [the `node:http` `close()` method](https://nodejs.org/api/http.html#serverclosecallback).
+
+```js
+const closeServer = serve()
+closeServer()
 ```
 
 ### Route params in the simple HTTP server

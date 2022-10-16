@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import type { DefineRoute, MutatorCollection, RouteVerbKey } from './walkRoutes'
-import type { SodaRequest } from '.'
+import { serve, SodaRequest } from '.'
 
 import { env } from 'node:process'
 import { createServer } from 'node:http'
@@ -88,7 +88,7 @@ const defineRoute: DefineRoute<RouteDefinition> = ({ verb, routePath, func }) =>
   }
 }
 
-export default async function(routesDirpath?: string, middlewareDirpath?: string) {
+export default async function(routesDirpath?: string, middlewareDirpath?: string): Promise<(callback?: () => void) => void> {
   const middleware = await walkMiddleware(middlewareDirpath)
   const routes = await walkRoutes<RouteDefinition>(routesDirpath, middleware, defineRoute)
 
@@ -154,4 +154,8 @@ export default async function(routesDirpath?: string, middlewareDirpath?: string
 
   server.listen(port)
   console.log(`soda listening on :${port}`)
+
+  return (callback?: () => void) => {
+    server.close(callback)
+  }
 }
