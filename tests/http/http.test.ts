@@ -56,4 +56,22 @@ describe('http serving', () => {
     const response2Data = response2.data as ApiResponse
     expect(response2Data.page).toBe('magic put: cosmo')
   })
+
+  it('should not serve routes w/o an index', async () => {
+    expect(async () => {
+      await axios.get('http://localhost:5456/magic/')
+    }).rejects.toThrow(AxiosError)
+    expect(async () => {
+      await axios.post('http://localhost:5456/magic/')
+    }).rejects.toThrow(AxiosError)
+    expect(async () => {
+      await axios.delete('http://localhost:5456/magic/')
+    }).rejects.toThrow(AxiosError)
+    expect(async () => {
+      await axios.put('http://localhost:5456/magic/')
+    }).rejects.toThrow(AxiosError)
+    expect(async () => {
+      await axios.patch('http://localhost:5456/magic/')
+    }).rejects.toThrow(AxiosError)
+  })
 })
