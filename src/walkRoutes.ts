@@ -198,7 +198,8 @@ async function getRoutesFromFile<RouteDefinition>({
 
   if (fileModule.middleware) {
     const middlewareMutator = fileModule.middleware
-    currentMiddleware = rebuildCurrentMiddleware(middlewareMutator([...currentMiddlewareEnabled]))
+    currentMiddlewareEnabled = middlewareMutator([...currentMiddlewareEnabled])
+    currentMiddleware = rebuildCurrentMiddleware(currentMiddlewareEnabled)
   }
 
   for (let verbKey of routeVerbExports) {
@@ -250,7 +251,8 @@ function prepareRoutePath<RouteDefinition>({
 }): RouteDefinition {
   if (func.middleware) {
     const middlewareMutator = func.middleware
-    currentMiddleware = rebuildCurrentMiddleware(middlewareMutator([...currentMiddlewareEnabled]))
+    currentMiddlewareEnabled = middlewareMutator([...currentMiddlewareEnabled])
+    currentMiddleware = rebuildCurrentMiddleware(currentMiddlewareEnabled)
   }
 
   let preparedFunc: Function
