@@ -90,6 +90,7 @@ const defineRoute: DefineRoute<RouteDefinition> = ({ verb, routePath, func }) =>
 
 export default async function(routesDirpath?: string, middlewareDirpath?: string): Promise<(callback?: () => void) => void> {
   const middleware = await walkMiddleware(middlewareDirpath)
+  console.log('MIDDLEWARE', middleware)
   const routes = await walkRoutes<RouteDefinition>(routesDirpath, middleware, defineRoute)
 
   const [initialPlainRoutes, initialParamRoutes] = Object.keys(RouteVerb).reduce((

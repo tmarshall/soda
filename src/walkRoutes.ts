@@ -157,7 +157,7 @@ async function walkDirectory<RouteDefinition>({
     Promise.all(pendingSubWalks),
     Promise.all(pendingHandlers),
   ])
-  
+
   // return a flat list of RouteDefinition instances
   return [...handlers, ...subwalks].reduce((flattened: RouteDefinition[], subdirHandlers: RouteDefinition[]) => {
     flattened.push(...subdirHandlers)

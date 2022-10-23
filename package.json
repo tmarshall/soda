@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "build": "tsc",
-    "test": "SODA_PORT=5456 jest ./tests/ --testMatch **/*.test.ts",
+    "test": "SODA_PORT=5456 jest ./tests/ --testMatch **/*.test.ts --runInBand",
     "prepare": "npm run build"
   },
   "main": "dist/src/index.js",
