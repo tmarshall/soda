@@ -2,6 +2,10 @@
 
 Routes as a directory.
 
+```
+npm install soda-routes
+```
+
 ## What is it?
 
 The idea behind Soda is that API paths should mirror their file path.
@@ -149,7 +153,7 @@ module.exports.get.middleware = (currentMiddleware) => [...currentMiddleware, 'u
 A simple Node HTTP server is included.
 
 ```js
-import { serve } from 'soda'
+import { serve } from 'soda-routes'
 serve()
 ```
 
