@@ -106,7 +106,7 @@ async function walkDirectory<RouteDefinition>({
     }
     const filenameLowercased = dirent.name.toLowerCase()
 
-    if (filenameLowercased === '.middleware.js') {
+    if (filenameLowercased === '.middleware.js' || filenameLowercased === '.middleware.ts') {
       const middlewareMutatorPath = path.resolve(path.join(currentDirPath, './' + dirent.name))
       const middlewareMutator = (await import(middlewareMutatorPath)).default
       currentMiddlewareEnabled = middlewareMutator([...currentMiddlewareEnabled])

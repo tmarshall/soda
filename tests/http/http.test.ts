@@ -106,6 +106,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(1)
     expect(responseData.params.gamma).toBe(0)
+    expect(responseData.params.delta).toBe(0)
 
     response = await axios.post('http://localhost:5456/')
     expect(response.status).toBe(200)
@@ -113,6 +114,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(1)
     expect(responseData.params.gamma).toBe(0)
+    expect(responseData.params.delta).toBe(0)
   })
 
   it('should allow adding middleware to all endpoints', async () => {
@@ -124,6 +126,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(1)
     expect(responseData.params.gamma).toBe(1)
+    expect(responseData.params.delta).toBe(0)
 
     response = await axios.post('http://localhost:5456/overrides/file/plusGamma')
     expect(response.status).toBe(200)
@@ -131,6 +134,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(1)
     expect(responseData.params.gamma).toBe(1)
+    expect(responseData.params.delta).toBe(0)
   })
 
   it('should allow overriding middleware for all endpoints', async () => {
@@ -142,6 +146,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(0)
     expect(responseData.params.gamma).toBe(1)
+    expect(responseData.params.delta).toBe(0)
 
     response = await axios.post('http://localhost:5456/overrides/file/onlyGamma')
     expect(response.status).toBe(200)
@@ -149,6 +154,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(0)
     expect(responseData.params.gamma).toBe(1)
+    expect(responseData.params.delta).toBe(0)
   })
 
   it('should allow adding middleware to a specific endpoint', async () => {
@@ -160,6 +166,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(1)
     expect(responseData.params.gamma).toBe(1)
+    expect(responseData.params.delta).toBe(0)
 
     response = await axios.post('http://localhost:5456/overrides/endpoint/plusGamma')
     expect(response.status).toBe(200)
@@ -167,6 +174,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(1)
     expect(responseData.params.gamma).toBe(0)
+    expect(responseData.params.delta).toBe(0)
   })
 
   it('should allow overriding middleware for a specific endpoint', async () => {
@@ -178,6 +186,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(0)
     expect(responseData.params.gamma).toBe(1)
+    expect(responseData.params.delta).toBe(0)
 
     response = await axios.post('http://localhost:5456/overrides/endpoint/onlyGamma')
     expect(response.status).toBe(200)
@@ -185,6 +194,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(1)
     expect(responseData.params.gamma).toBe(0)
+    expect(responseData.params.delta).toBe(0)
   })
 
   it('should allow overriding middleware using a mix of file-level and endpoint-level settings', async () => {
@@ -196,6 +206,7 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(1)
     expect(responseData.params.beta).toBe(1)
     expect(responseData.params.gamma).toBe(1)
+    expect(responseData.params.delta).toBe(0)
 
     response = await axios.post('http://localhost:5456/overrides/mixed')
     expect(response.status).toBe(200)
@@ -203,5 +214,17 @@ describe('http serving + middleware', () => {
     expect(responseData.params.alpha).toBe(0)
     expect(responseData.params.beta).toBe(1)
     expect(responseData.params.gamma).toBe(1)
+    expect(responseData.params.delta).toBe(0)
+  })
+
+  it('should allow for a .middleware dir within a sub-tree of routes', async () => {
+    // now for the acutal nested routes
+    const response = await axios.get('http://localhost:5456/overrides/dir/things/route')
+    expect(response.status).toBe(200)
+    const responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(1)
+    expect(responseData.params.gamma).toBe(0)
+    expect(responseData.params.delta).toBe(1)
   })
 })
