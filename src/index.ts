@@ -10,6 +10,12 @@ export interface SodaRequest extends IncomingMessage {
   params: Record<string, string | number>
 }
 
+
+type middlewareOverride = (currentMiddleware: string[]) => string[]
+type endpointFunc = <T>(req: SodaRequest, res: T) => void
+export type SodaEndpoint<T> = endpointFunc & { middleware: middlewareOverride }
+
+
 if (require.main === module) {
   program
     .command('serve [routes_directory] [middleware_directory]')

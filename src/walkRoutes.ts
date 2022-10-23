@@ -106,7 +106,7 @@ async function walkDirectory<RouteDefinition>({
     }
     const filenameLowercased = dirent.name.toLowerCase()
 
-    if (filenameLowercased === '.middleware.js') {
+    if (filenameLowercased === '.middleware.js' || filenameLowercased === '.middleware.ts') {
       const middlewareMutatorPath = path.resolve(path.join(currentDirPath, './' + dirent.name))
       const middlewareMutator = (await import(middlewareMutatorPath)).default
       currentMiddlewareEnabled = middlewareMutator([...currentMiddlewareEnabled])
@@ -157,7 +157,7 @@ async function walkDirectory<RouteDefinition>({
     Promise.all(pendingSubWalks),
     Promise.all(pendingHandlers),
   ])
-  
+
   // return a flat list of RouteDefinition instances
   return [...handlers, ...subwalks].reduce((flattened: RouteDefinition[], subdirHandlers: RouteDefinition[]) => {
     flattened.push(...subdirHandlers)
@@ -198,7 +198,8 @@ async function getRoutesFromFile<RouteDefinition>({
 
   if (fileModule.middleware) {
     const middlewareMutator = fileModule.middleware
-    currentMiddleware = rebuildCurrentMiddleware(middlewareMutator([...currentMiddlewareEnabled]))
+    currentMiddlewareEnabled = middlewareMutator([...currentMiddlewareEnabled])
+    currentMiddleware = rebuildCurrentMiddleware(currentMiddlewareEnabled)
   }
 
   for (let verbKey of routeVerbExports) {
@@ -250,7 +251,8 @@ function prepareRoutePath<RouteDefinition>({
 }): RouteDefinition {
   if (func.middleware) {
     const middlewareMutator = func.middleware
-    currentMiddleware = rebuildCurrentMiddleware(middlewareMutator([...currentMiddlewareEnabled]))
+    currentMiddlewareEnabled = middlewareMutator([...currentMiddlewareEnabled])
+    currentMiddleware = rebuildCurrentMiddleware(currentMiddlewareEnabled)
   }
 
   let preparedFunc: Function

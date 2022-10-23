@@ -29,13 +29,18 @@ export default async function walkMiddleware(dirpath = './middleware'): Promise<
 
     const filenameLowercased = dirent.name.toLowerCase()
 
-    if (filenameLowercased === 'index.js') {
+    if (filenameLowercased === 'index.js' || filenameLowercased === 'index.ts') {
       const indexModule = await import(path.resolve(path.join(dirpath, './' + dirent.name)))
       result.enabled = indexModule.default
       continue
     }
 
-    if (filenameLowercased.slice(-3) !== '.js' || filenameLowercased.slice(0, 1) === '.') {
+    if (
+      (
+        filenameLowercased.slice(-3) !== '.js' &&
+        filenameLowercased.slice(-3) !== '.ts'
+      ) || filenameLowercased.slice(0, 1) === '.'
+    ) {
       continue
     }
 
