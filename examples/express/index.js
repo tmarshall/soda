@@ -1,5 +1,5 @@
 const express = require('express')
-const soda = require('soda')
+const soda = require('soda-routes')
 
 const app = express()
 

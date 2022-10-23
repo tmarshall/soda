@@ -11,6 +11,6 @@
   "repository": "tmarshall/soda",
   "dependencies": {
     "express": "^4.18.1",
-    "soda": "latest"
+    "soda-routes": "latest"
   }
 }
