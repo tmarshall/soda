@@ -1,5 +1,5 @@
 {
-  "name": "soda",
+  "name": "@tmarshall/soda",
   "version": "0.0.1-alpha1",
   "description": "Routes as a directory",
   "scripts": {
