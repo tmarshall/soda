@@ -82,124 +82,108 @@ describe('http serving', () => {
 })
 
 describe('http serving + middleware', () => {
-  describe('defined middleware', () => {
-    let closeServer: undefined | ((callback?: () => void) => void) = undefined
+  let closeServer: undefined | ((callback?: () => void) => void) = undefined
     
-    beforeAll(async () => {
-      closeServer = await serve(
-        path.join(__dirname, 'secondaryRoutes', 'middleware'),
-        path.join(__dirname, 'middleware')
-      )
-    })
-
-    afterAll(() => {
-      if (closeServer) {
-        closeServer()
-      }
-    })
-
-    describe('default middleware settings', () => {
-      it('should set base middleware', async () => {
-        let response, responseData
-
-        response = await axios.get('http://localhost:5456/')
-        expect(response.status).toBe(200)
-        responseData = response.data as ApiParamsDebugResponse
-        expect(responseData.params.alpha).toBe(0)
-        expect(responseData.params.beta).toBe(1)
-        expect(responseData.params.gamma).toBe(0)
-
-        response = await axios.post('http://localhost:5456/')
-        expect(response.status).toBe(200)
-        responseData = response.data as ApiParamsDebugResponse
-        expect(responseData.params.alpha).toBe(0)
-        expect(responseData.params.beta).toBe(1)
-        expect(responseData.params.gamma).toBe(0)
-      })
-    })
+  beforeAll(async () => {
+    closeServer = await serve(
+      path.join(__dirname, 'secondaryRoutes', 'middleware'),
+      path.join(__dirname, 'middleware')
+    )
   })
 
-  describe('overrides at file level', () => {
-    describe('adding "gamma" middleware to existing defaults', () => {
-      it('should set overrides to all endpoints', async () => {
-        let response, responseData
+  afterAll(() => {
+    if (closeServer) {
+      closeServer()
+    }
+  })
+  
+  it('should set base middleware', async () => {
+    let response, responseData
 
-        response = await axios.get('http://localhost:5456/overrides/file/plusGamma')
-        expect(response.status).toBe(200)
-        responseData = response.data as ApiParamsDebugResponse
-        expect(responseData.params.alpha).toBe(0)
-        expect(responseData.params.beta).toBe(1)
-        expect(responseData.params.gamma).toBe(1)
+    response = await axios.get('http://localhost:5456/')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(1)
+    expect(responseData.params.gamma).toBe(0)
 
-        response = await axios.post('http://localhost:5456/overrides/file/plusGamma')
-        expect(response.status).toBe(200)
-        responseData = response.data as ApiParamsDebugResponse
-        expect(responseData.params.alpha).toBe(0)
-        expect(responseData.params.beta).toBe(1)
-        expect(responseData.params.gamma).toBe(1)
-      })
-    })
-
-    describe('adding "gamma" middleware, but not applying defaults', () => {
-      it('should set overrides to all endpoints', async () => {
-        let response, responseData
-
-        response = await axios.get('http://localhost:5456/overrides/file/onlyGamma')
-        expect(response.status).toBe(200)
-        responseData = response.data as ApiParamsDebugResponse
-        expect(responseData.params.alpha).toBe(0)
-        expect(responseData.params.beta).toBe(0)
-        expect(responseData.params.gamma).toBe(1)
-
-        response = await axios.post('http://localhost:5456/overrides/file/onlyGamma')
-        expect(response.status).toBe(200)
-        responseData = response.data as ApiParamsDebugResponse
-        expect(responseData.params.alpha).toBe(0)
-        expect(responseData.params.beta).toBe(0)
-        expect(responseData.params.gamma).toBe(1)
-      })
-    })
+    response = await axios.post('http://localhost:5456/')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(1)
+    expect(responseData.params.gamma).toBe(0)
   })
 
-  describe('overrides at endpoint level', () => {
-    describe('adding "gamma" middleware to existing defaults', () => {
-      it('should set overrides to get endpoint', async () => {
-        let response, responseData
+  it('should allow adding middleware to all endpoints', async () => {
+    let response, responseData
 
-        response = await axios.get('http://localhost:5456/overrides/endpoint/plusGamma')
-        expect(response.status).toBe(200)
-        responseData = response.data as ApiParamsDebugResponse
-        expect(responseData.params.alpha).toBe(0)
-        expect(responseData.params.beta).toBe(1)
-        expect(responseData.params.gamma).toBe(1)
+    response = await axios.get('http://localhost:5456/overrides/file/plusGamma')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(1)
+    expect(responseData.params.gamma).toBe(1)
 
-        response = await axios.post('http://localhost:5456/overrides/endpoint/plusGamma')
-        expect(response.status).toBe(200)
-        responseData = response.data as ApiParamsDebugResponse
-        expect(responseData.params.alpha).toBe(0)
-        expect(responseData.params.beta).toBe(1)
-        expect(responseData.params.gamma).toBe(0)
-      })
-    })
+    response = await axios.post('http://localhost:5456/overrides/file/plusGamma')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(1)
+    expect(responseData.params.gamma).toBe(1)
+  })
 
-    describe('adding "gamma" middleware, but not applying defaults', () => {
-      it('should set overrides to get endpoint', async () => {
-        let response, responseData
+  it('should allow overriding middleware for all endpoints', async () => {
+    let response, responseData
 
-        response = await axios.get('http://localhost:5456/overrides/endpoint/onlyGamma')
-        expect(response.status).toBe(200)
-        responseData = response.data as ApiParamsDebugResponse
-        expect(responseData.params.alpha).toBe(0)
-        expect(responseData.params.beta).toBe(0)
-        expect(responseData.params.gamma).toBe(1)
+    response = await axios.get('http://localhost:5456/overrides/file/onlyGamma')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(0)
+    expect(responseData.params.gamma).toBe(1)
 
-        response = await axios.post('http://localhost:5456/overrides/endpoint/onlyGamma')
-        expect(response.status).toBe(200)
-        responseData = response.data as ApiParamsDebugResponse
-        expect(responseData.params.alpha).toBe(0)
-        expect(responseData.params.beta).toBe(1)
-        expect(responseData.params.gamma).toBe(0)
-      })
-    })
+    response = await axios.post('http://localhost:5456/overrides/file/onlyGamma')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(0)
+    expect(responseData.params.gamma).toBe(1)
+  })
+
+  it('should allow adding middleware to a specific endpoint', async () => {
+    let response, responseData
+
+    response = await axios.get('http://localhost:5456/overrides/endpoint/plusGamma')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(1)
+    expect(responseData.params.gamma).toBe(1)
+
+    response = await axios.post('http://localhost:5456/overrides/endpoint/plusGamma')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(1)
+    expect(responseData.params.gamma).toBe(0)
+  })
+
+  it('should allow overriding middleware for a specific endpoint', async () => {
+    let response, responseData
+
+    response = await axios.get('http://localhost:5456/overrides/endpoint/onlyGamma')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(0)
+    expect(responseData.params.gamma).toBe(1)
+
+    response = await axios.post('http://localhost:5456/overrides/endpoint/onlyGamma')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(1)
+    expect(responseData.params.gamma).toBe(0)
   })
 })
