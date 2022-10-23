@@ -1,7 +1,7 @@
 {
   "name": "soda",
   "version": "0.0.1-alpha1",
-  "description": "",
+  "description": "Routes as a directory",
   "scripts": {
     "build": "tsc",
     "test": "SODA_PORT=5456 jest ./tests/ --testMatch **/*.test.ts --runInBand",
