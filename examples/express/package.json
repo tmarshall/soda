@@ -1,5 +1,5 @@
 {
-  "name": "soda-example-express",
+  "name": "soda-routes-example-express",
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
@@ -11,6 +11,6 @@
   "repository": "tmarshall/soda",
   "dependencies": {
     "express": "^4.18.1",
-    "soda": "latest"
+    "soda-routes": "latest"
   }
 }
