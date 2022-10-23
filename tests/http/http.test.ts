@@ -9,11 +9,14 @@ interface ApiResponse {
   page: string
 }
 
+<<<<<<< HEAD
 interface ApiParamsDebugResponse {
   success: boolean
   params: Record<string, string | number>
 }
 
+=======
+>>>>>>> 4f902c8b7261cb3fac053a49593607ce52c8bcc4
 describe('http serving', () => {
   let closeServer: undefined | ((callback?: () => void) => void) = undefined
   
