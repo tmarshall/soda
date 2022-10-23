@@ -257,3 +257,15 @@ startup()
 `withKoaRouter` uses [the `@koa/router` package](https://www.npmjs.com/package/koa-router). The return value is an instance of the Koa router.
 
 Any route filepath like `routes/accounts/[accountId].js` will get converted to a Koa route path like `/routes/accounts/:accountId`.
+
+## Typings
+
+Some TS types are included.
+
+```ts
+import type { SodaRequest } from 'soda-routes'
+/*
+SodaRequest extends IncomingMessage, from 'node:http',
+to include the `req.params` object
+*/
+```
