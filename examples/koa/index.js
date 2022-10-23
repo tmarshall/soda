@@ -1,5 +1,5 @@
 const Koa = require('koa')
-const soda = require('soda')
+const soda = require('soda-routes')
 const app = new Koa()
 
 async function startup() {
