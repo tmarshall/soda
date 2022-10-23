@@ -1,3 +1,3 @@
-const { serve } = require('soda')
+const { serve } = require('soda-routes')
 
 serve()

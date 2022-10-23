@@ -1,5 +1,5 @@
 {
-  "name": "soda-example-node-http",
+  "name": "soda-routes-example-node-http",
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
@@ -10,6 +10,6 @@
   "license": "MIT",
   "repository": "tmarshall/soda",
   "dependencies": {
-    "soda": "^0.2.5"
+    "soda-routes": "latest"
   }
 }
