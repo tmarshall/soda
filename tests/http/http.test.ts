@@ -186,4 +186,22 @@ describe('http serving + middleware', () => {
     expect(responseData.params.beta).toBe(1)
     expect(responseData.params.gamma).toBe(0)
   })
+
+  it('should allow overriding middleware using a mix of file-level and endpoint-level settings', async () => {
+    let response, responseData
+
+    response = await axios.get('http://localhost:5456/overrides/mixed')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(1)
+    expect(responseData.params.beta).toBe(1)
+    expect(responseData.params.gamma).toBe(1)
+
+    response = await axios.post('http://localhost:5456/overrides/mixed')
+    expect(response.status).toBe(200)
+    responseData = response.data as ApiParamsDebugResponse
+    expect(responseData.params.alpha).toBe(0)
+    expect(responseData.params.beta).toBe(1)
+    expect(responseData.params.gamma).toBe(1)
+  })
 })
